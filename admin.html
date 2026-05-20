@@ -140,12 +140,13 @@ async function deleteAppt(apptId){
   });
 
   await runTransaction(db,async(tx)=>{
-    for(const {date,time} of toRestore){
-      const slotId=`${date}_${time.replace(":","")}`
-      const sRef=doc(db,"slots",slotId);
-      const s=await tx.get(sRef);
-      if(s.exists()) tx.update(sRef,{booked:Math.max(0,s.data().booked-1)});
-    }
+    // 先全部 read
+    const slotRefs=toRestore.map(({date,time})=>doc(db,"slots",`${date}_${time.replace(":","")}`));
+    const slotSnaps=await Promise.all(slotRefs.map(ref=>tx.get(ref)));
+    // 再全部 write
+    slotSnaps.forEach((s,i)=>{
+      if(s.exists()) tx.update(slotRefs[i],{booked:Math.max(0,s.data().booked-1)});
+    });
     tx.delete(doc(db,"appointments",apptId));
   });
   await loadData();
