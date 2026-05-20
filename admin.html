@@ -8,25 +8,25 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Noto Sans TC','PingFang TC',sans-serif;background:#f0f7ff;min-height:100vh}
-    .header{background:linear-gradient(135deg,#0f2942,#0d5c8a);padding:20px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+    .header{background:linear-gradient(135deg,#0f2942,#0d5c8a);padding:20px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
     .header-title{font-size:20px;font-weight:900;letter-spacing:2px}
     .header-sub{font-size:12px;opacity:.6;margin-top:4px}
     .btn{border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
     .btn-logout{background:rgba(255,255,255,.15);color:#fff}
     .btn-export{background:#059669;color:#fff;padding:10px 20px;font-size:14px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;font-weight:700}
     .btn-delete{background:#fef2f2;color:#ef4444;border:1px solid #fca5a5;padding:5px 12px;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700}
-    .main{max-width:1060px;margin:0 auto;padding:24px 16px}
     .btn-login{background:linear-gradient(135deg,#0f2942,#0d5c8a);color:#fff;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:800;display:inline-flex;align-items:center;gap:12px;border:none;cursor:pointer;font-family:inherit}
+    .main{max-width:1100px;margin:0 auto;padding:24px 16px}
     .card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:20px}
-    .card-title{font-size:15px;font-weight:800;color:#0f2942;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+    .card-title{font-size:15px;font-weight:800;color:#0f2942;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
     .filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
     select,input{padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;outline:none}
     select:focus,input:focus{border-color:#0d5c8a}
     table{width:100%;border-collapse:collapse;font-size:13px}
-    th{background:#f1f5f9;padding:10px 12px;text-align:left;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0}
-    td{padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#0f2942;vertical-align:middle}
+    th{background:#f1f5f9;padding:10px 12px;text-align:left;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+    td{padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#0f2942;vertical-align:top}
     tr:hover td{background:#f8fafc}
-    .tag{display:inline-block;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700}
+    .tag{display:inline-block;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap}
     .tag-emp{background:#dbeafe;color:#1d4ed8}
     .tag-dep{background:#dcfce7;color:#15803d}
     .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px}
@@ -34,17 +34,16 @@
     .stat-val{font-size:28px;font-weight:900;color:#0d5c8a}
     .stat-label{font-size:11px;color:#64748b;margin-top:4px}
     .empty{text-align:center;padding:40px;color:#94a3b8;font-size:14px}
-    .loading{text-align:center;padding:40px;color:#64748b}
-    .no-access{text-align:center;padding:60px 20px}
+    .loading{text-align:center;padding:40px;color:#64748b;font-size:14px}
     /* Tab */
-    .tab-row{display:flex;gap:8px;margin-bottom:20px}
+    .tab-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
     .tab-btn{border:2px solid #e2e8f0;background:#fff;border-radius:10px;padding:9px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#64748b;transition:all .2s}
     .tab-btn.active{border-color:#0d5c8a;background:#0d5c8a;color:#fff}
-    /* 時段總覽表 */
+    /* 時段總覽 */
     .ov-table{width:100%;border-collapse:collapse;font-size:13px}
-    .ov-table th{background:#f1f5f9;padding:10px 14px;text-align:center;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0}
+    .ov-table th{background:#f1f5f9;padding:10px 14px;text-align:center;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;white-space:nowrap}
     .ov-table th.left{text-align:left}
-    .ov-table td{padding:10px 14px;border-bottom:1px solid #f1f5f9;text-align:center}
+    .ov-table td{padding:10px 8px;border-bottom:1px solid #f1f5f9;text-align:center}
     .ov-table tr:hover td{background:#f8fafc}
     .ov-table .month-row td{background:#eff6ff;font-weight:900;color:#0d5c8a;font-size:12px;letter-spacing:1px;text-align:left;padding:7px 14px}
     .cell-inner{display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -52,33 +51,27 @@
     .c-bar{width:50px;height:5px;border-radius:3px;background:#e2e8f0;overflow:hidden}
     .c-fill{height:100%;border-radius:3px}
     .c-sub{font-size:10px;color:#94a3b8}
-    .c-green{color:#059669} .f-green{background:#059669}
-    .c-yellow{color:#d97706} .f-yellow{background:#d97706}
-    .c-red{color:#ef4444}   .f-red{background:#ef4444}
-    .c-zero{color:#cbd5e1}  .f-zero{background:#e2e8f0}
+    .c-green{color:#059669}.f-green{background:#059669}
+    .c-yellow{color:#d97706}.f-yellow{background:#d97706}
+    .c-red{color:#ef4444}.f-red{background:#ef4444}
+    .c-zero{color:#cbd5e1}.f-zero{background:#e2e8f0}
     .c-na{color:#e2e8f0;font-size:18px}
+    /* 預約明細 */
+    .dep-line{font-size:12px;color:#475569;margin-top:3px;display:flex;gap:6px;align-items:center}
   </style>
 </head>
 <body>
 <div id="app"></div>
-
 <script type="module">
 import { app } from "./firebase-config.js";
-import { getFirestore, collection, getDocs, doc, runTransaction }
+import { getFirestore, collection, getDocs, doc, runTransaction, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const db   = getFirestore(app);
-const auth = getAuth(app);
-
-const ADMIN_LIST = [
-  "aaronhsu@gis.fcu.edu.tw","yoyoshen@gis.fcu.edu.tw",
-  "sheena@geosense.tw","minnie@gis.fcu.edu.tw",
-  "novia@gis.fcu.edu.tw","rexyang@gis.fcu.edu.tw","jillhuang@gis.fcu.edu.tw"
-];
-
-const SLOTS_DATA = {
+const db=getFirestore(app), auth=getAuth(app);
+const ADMIN_LIST=["aaronhsu@gis.fcu.edu.tw","yoyoshen@gis.fcu.edu.tw","sheena@geosense.tw","minnie@gis.fcu.edu.tw","novia@gis.fcu.edu.tw","rexyang@gis.fcu.edu.tw","jillhuang@gis.fcu.edu.tw"];
+const SLOTS_DATA={
   "2026-07-18":[{time:"07:30",limit:2},{time:"07:45",limit:4},{time:"08:00",limit:9},{time:"09:00",limit:5},{time:"09:30",limit:5}],
   "2026-07-19":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
   "2026-07-25":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
@@ -102,179 +95,187 @@ const SLOTS_DATA = {
   "2026-09-26":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
   "2026-09-27":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
 };
+const ALL_TIMES=["07:30","07:45","08:00","09:00","09:30"];
+const WD=["日","一","二","三","四","五","六"];
+function fmtDate(ds){const [y,m,d]=ds.split("-").map(Number);return `${m}/${d}(${WD[new Date(y,m-1,d).getDay()]})`;}
 
-const ALL_TIMES = ["07:30","07:45","08:00","09:00","09:30"];
-const WD = ["日","一","二","三","四","五","六"];
+let currentUser=null,allAppts=[],allSlots={};
+let filterDate="",filterTime="",filterDept="",activeTab="overview";
+const root=document.getElementById("app");
 
-function fmtDate(ds) {
-  const [y,m,d] = ds.split("-").map(Number);
-  return `${m}/${d}(${WD[new Date(y,m-1,d).getDay()]})`;
-}
+async function login(){await signInWithPopup(auth,new GoogleAuthProvider());}
+async function logout(){await signOut(auth);}
+window.login=login;window.logout=logout;
 
-let currentUser = null;
-let allAppts    = [];
-let allSlots    = {};
-let filterDate  = "";
-let filterTime  = "";
-let filterDept  = "";
-let activeTab   = "overview"; // overview | appts
-
-const root = document.getElementById("app");
-
-async function login() { await signInWithPopup(auth, new GoogleAuthProvider()); }
-async function logout() { await signOut(auth); }
-window.login = login; window.logout = logout;
-
-async function loadData() {
-  // 預約資料
-  const aSnap = await getDocs(collection(db, "appointments"));
-  allAppts = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  allAppts.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-  // 時段資料
-  const sSnap = await getDocs(collection(db, "slots"));
-  allSlots = {};
-  sSnap.forEach(d => {
-    const { date, time, booked, limit } = d.data();
-    if (!allSlots[date]) allSlots[date] = {};
-    allSlots[date][time] = { booked, limit };
+async function loadData(){
+  const aSnap=await getDocs(collection(db,"appointments"));
+  allAppts=aSnap.docs.map(d=>({id:d.id,...d.data()}));
+  // 排序：先按員工日期，再按時段
+  allAppts.sort((a,b)=>{
+    const ad=a.emp?.date||a.date||"";
+    const bd=b.emp?.date||b.date||"";
+    const at=a.emp?.time||a.time||"";
+    const bt=b.emp?.time||b.time||"";
+    return ad.localeCompare(bd)||at.localeCompare(bt);
   });
+  const sSnap=await getDocs(collection(db,"slots"));
+  allSlots={};
+  sSnap.forEach(d=>{const {date,time,booked,limit}=d.data();if(!allSlots[date])allSlots[date]={};allSlots[date][time]={booked,limit};});
   renderAdmin();
 }
 
-async function deleteAppt(appt) {
-  if (!confirm(`確定要刪除「${appt.empName}」的預約？\n（${appt.date} ${appt.time}，共 ${appt.totalPeople} 位）`)) return;
-  const slotId  = `${appt.date}_${appt.time.replace(":","")}`
-  await runTransaction(db, async (tx) => {
-    const sRef = doc(db, "slots", slotId);
-    const s = await tx.get(sRef);
-    if (s.exists()) tx.update(sRef, { booked: Math.max(0, s.data().booked - appt.totalPeople) });
-    tx.delete(doc(db, "appointments", appt.id));
+// 刪除整筆預約（員工＋所有眷屬名額一起還原）
+async function deleteAppt(apptId){
+  const appt=allAppts.find(a=>a.id===apptId);
+  if(!appt) return;
+  const empName=appt.emp?.name||appt.empName||"";
+  if(!confirm(`確定要刪除「${empName}」的預約？\n員工和所有眷屬的名額都會還原。`)) return;
+
+  // 收集所有要還原的 {date,time}
+  const toRestore=[];
+  if(appt.emp?.date&&appt.emp?.time) toRestore.push({date:appt.emp.date,time:appt.emp.time});
+  else if(appt.date&&appt.time) toRestore.push({date:appt.date,time:appt.time});
+  (appt.dependents||[]).forEach(dep=>{
+    if(dep.date&&dep.time) toRestore.push({date:dep.date,time:dep.time});
+  });
+
+  await runTransaction(db,async(tx)=>{
+    for(const {date,time} of toRestore){
+      const slotId=`${date}_${time.replace(":","")}`
+      const sRef=doc(db,"slots",slotId);
+      const s=await tx.get(sRef);
+      if(s.exists()) tx.update(sRef,{booked:Math.max(0,s.data().booked-1)});
+    }
+    tx.delete(doc(db,"appointments",apptId));
   });
   await loadData();
 }
-window.deleteAppt = deleteAppt;
+window.deleteAppt=deleteAppt;
 
-function exportCSV() {
-  const filtered = getFiltered();
-  let csv = "\uFEFF日期,時段,單位,員工姓名,眷屬名單,合計人數,預約帳號\n";
-  filtered.forEach(a => {
-    const deps = (a.dependents||[]).join("、") || "無";
-    csv += `${a.date},${a.time},${a.dept},${a.empName},"${deps}",${a.totalPeople},${a.email}\n`;
+function exportCSV(){
+  const filtered=getFiltered();
+  let csv="\uFEFF單位,員工姓名,員工日期,員工時段,眷屬名單,合計人數,預約帳號\n";
+  filtered.forEach(a=>{
+    const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time};
+    const deps=(a.dependents||[]).map(d=>{
+      const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time};
+      return `${dd.name}(${dd.date?fmtDate(dd.date):""} ${dd.time||""})`;
+    }).join("、")||"無";
+    csv+=`${emp.dept||""},${emp.name||""},${emp.date||""},${emp.time||""},"${deps}",${a.totalPeople||1},${a.email}\n`;
   });
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = `健檢預約名單_${new Date().toLocaleDateString("zh-TW")}.csv`;
-  a.click(); URL.revokeObjectURL(url);
+  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  const a=document.createElement("a");
+  a.href=url;a.download=`健檢預約名單_${new Date().toLocaleDateString("zh-TW")}.csv`;
+  a.click();URL.revokeObjectURL(url);
 }
-window.exportCSV = exportCSV;
+window.exportCSV=exportCSV;
 
-function getFiltered() {
-  return allAppts.filter(a =>
-    (!filterDate || a.date === filterDate) &&
-    (!filterTime || a.time === filterTime) &&
-    (!filterDept || a.dept === filterDept)
-  );
+function getFiltered(){
+  return allAppts.filter(a=>{
+    const empDate=a.emp?.date||a.date||"";
+    const empTime=a.emp?.time||a.time||"";
+    const empDept=a.emp?.dept||a.dept||"";
+    return(!filterDate||empDate===filterDate)&&(!filterTime||empTime===filterTime)&&(!filterDept||empDept===filterDept);
+  });
 }
-window.setFilter = (field, val) => {
-  if (field==="date") filterDate = val;
-  if (field==="time") filterTime = val;
-  if (field==="dept") filterDept = val;
+window.setFilter=(field,val)=>{
+  if(field==="date") filterDate=val;
+  if(field==="time") filterTime=val;
+  if(field==="dept") filterDept=val;
   renderAdmin();
 };
-window.setTab = (tab) => { activeTab = tab; renderAdmin(); };
+window.setTab=(tab)=>{activeTab=tab;renderAdmin();};
 
-// ── 時段總覽表 ──────────────────────────────────
-function renderOverview() {
-  const months = {};
-  Object.keys(SLOTS_DATA).sort().forEach(date => {
-    const m = date.slice(0,7);
-    if (!months[m]) months[m] = [];
+// ── 時段總覽 ──
+function renderOverview(){
+  const months={};
+  Object.keys(SLOTS_DATA).sort().forEach(date=>{
+    const m=date.slice(0,7);
+    if(!months[m]) months[m]=[];
     months[m].push(date);
   });
-
-  function cell(date, time) {
-    const slotDef = SLOTS_DATA[date]?.find(s => s.time === time);
-    if (!slotDef) return `<td><span class="c-na">—</span></td>`;
-    const limit  = slotDef.limit;
-    const booked = allSlots[date]?.[time]?.booked ?? 0;
-    const remain = limit - booked;
-    const pct    = Math.min((booked/limit)*100, 100);
-    const cc = remain === 0 ? "zero" : remain <= 2 ? "red" : remain <= Math.ceil(limit/2) ? "yellow" : "green";
-    return `<td>
-      <div class="cell-inner">
-        <div class="c-remain c-${cc}">${remain === 0 ? "額滿" : remain}</div>
-        <div class="c-bar"><div class="c-fill f-${cc}" style="width:${pct}%"></div></div>
-        <div class="c-sub">${booked}/${limit}</div>
-      </div>
-    </td>`;
+  function cell(date,time){
+    const slotDef=SLOTS_DATA[date]?.find(s=>s.time===time);
+    if(!slotDef) return `<td><span class="c-na">—</span></td>`;
+    const limit=slotDef.limit;
+    const booked=allSlots[date]?.[time]?.booked??0;
+    const remain=limit-booked;
+    const pct=Math.min((booked/limit)*100,100);
+    const cc=remain===0?"zero":remain<=2?"red":remain<=Math.ceil(limit/2)?"yellow":"green";
+    return `<td><div class="cell-inner">
+      <div class="c-remain c-${cc}">${remain===0?"額滿":remain}</div>
+      <div class="c-bar"><div class="c-fill f-${cc}" style="width:${pct}%"></div></div>
+      <div class="c-sub">${booked}/${limit}</div>
+    </div></td>`;
   }
-
-  let html = `<table class="ov-table">
+  let html=`<div style="overflow-x:auto"><table class="ov-table">
     <thead><tr>
       <th class="left">日期</th>
-      ${ALL_TIMES.map(t => `<th>${t}</th>`).join("")}
+      ${ALL_TIMES.map(t=>`<th>${t}</th>`).join("")}
       <th>總剩餘</th>
     </tr></thead><tbody>`;
-
-  for (const [month, dates] of Object.entries(months)) {
-    const [y,m] = month.split("-");
-    html += `<tr class="month-row"><td colspan="${ALL_TIMES.length+2}">${parseInt(m)} 月</td></tr>`;
-    for (const date of dates.sort()) {
-      const totalLimit  = SLOTS_DATA[date].reduce((a,s) => a+s.limit, 0);
-      const totalBooked = SLOTS_DATA[date].reduce((a,s) => a+(allSlots[date]?.[s.time]?.booked??0), 0);
-      const totalRemain = totalLimit - totalBooked;
-      const cc = totalRemain === 0 ? "zero" : totalRemain <= 5 ? "red" : "green";
-      html += `<tr>
+  for(const [month,dates] of Object.entries(months)){
+    const [y,m]=month.split("-");
+    html+=`<tr class="month-row"><td colspan="${ALL_TIMES.length+2}">${parseInt(m)} 月</td></tr>`;
+    for(const date of dates.sort()){
+      const totalLimit=SLOTS_DATA[date].reduce((a,s)=>a+s.limit,0);
+      const totalBooked=SLOTS_DATA[date].reduce((a,s)=>a+(allSlots[date]?.[s.time]?.booked??0),0);
+      const totalRemain=totalLimit-totalBooked;
+      const cc=totalRemain===0?"zero":totalRemain<=5?"red":"green";
+      html+=`<tr>
         <td><strong>${fmtDate(date)}</strong></td>
-        ${ALL_TIMES.map(t => cell(date, t)).join("")}
+        ${ALL_TIMES.map(t=>cell(date,t)).join("")}
         <td><strong class="c-${cc}">${totalRemain}</strong><div class="c-sub">${totalBooked}/${totalLimit}</div></td>
       </tr>`;
     }
   }
-  html += `</tbody></table>`;
-
-  // 圖例
-  html += `<div style="display:flex;gap:16px;margin-top:16px;font-size:12px;color:#64748b;align-items:center">
+  html+=`</tbody></table></div>`;
+  html+=`<div style="display:flex;gap:16px;margin-top:16px;font-size:12px;color:#64748b;align-items:center;flex-wrap:wrap">
     <span>圖例：</span>
     <span style="color:#059669;font-weight:700">■ 充裕</span>
     <span style="color:#d97706;font-weight:700">■ 剩一半以下</span>
     <span style="color:#ef4444;font-weight:700">■ 剩2位以下</span>
     <span style="color:#cbd5e1;font-weight:700">■ 額滿</span>
-    <span style="color:#e2e8f0;font-weight:700">— 無此時段</span>
   </div>`;
   return html;
 }
 
-// ── 主渲染 ──────────────────────────────────────
-function renderAdmin() {
-  const filtered = getFiltered();
-  const allDates = [...new Set(allAppts.map(a=>a.date))].sort();
-  const allTimes = [...new Set(allAppts.map(a=>a.time))].sort();
-  const allDepts = [...new Set(allAppts.map(a=>a.dept))].sort();
+// ── 主渲染 ──
+function renderAdmin(){
+  const filtered=getFiltered();
+  const allDates=[...new Set(allAppts.map(a=>a.emp?.date||a.date||"").filter(Boolean))].sort();
+  const allTimes=[...new Set(allAppts.map(a=>a.emp?.time||a.time||"").filter(Boolean))].sort();
+  const allDepts=[...new Set(allAppts.map(a=>a.emp?.dept||a.dept||"").filter(Boolean))].sort();
 
-  // 統計
-  const totalPeople = allAppts.reduce((a,b) => a+b.totalPeople, 0);
-  const totalDeps   = allAppts.reduce((a,b) => a+(b.dependents||[]).length, 0);
-  const totalLimit  = Object.values(SLOTS_DATA).reduce((a,slots) => a+slots.reduce((b,s)=>b+s.limit,0), 0);
-  const totalBooked = Object.values(allSlots).reduce((a,times) => a+Object.values(times).reduce((b,s)=>b+s.booked,0), 0);
+  const totalPeople=allAppts.reduce((a,b)=>a+(b.totalPeople||1),0);
+  const totalDeps=allAppts.reduce((a,b)=>a+(b.dependents||[]).length,0);
+  const totalLimit=Object.values(SLOTS_DATA).reduce((a,slots)=>a+slots.reduce((b,s)=>b+s.limit,0),0);
+  const totalBooked=Object.values(allSlots).reduce((a,times)=>a+Object.values(times).reduce((b,s)=>b+s.booked,0),0);
 
-  // 預約名單表
-  let rows = "";
-  if (filtered.length === 0) {
-    rows = `<tr><td colspan="7"><div class="empty">尚無預約資料</div></td></tr>`;
-  } else {
-    filtered.forEach(a => {
-      const deps = (a.dependents||[]).map((d,i) => `<span class="tag tag-dep">眷${i+1}</span> ${d}`).join("<br>");
-      rows += `<tr>
-        <td>${a.date}</td><td><strong>${a.time}</strong></td><td>${a.dept}</td>
-        <td><span class="tag tag-emp">員工</span> ${a.empName}</td>
-        <td>${deps||"—"}</td><td><strong>${a.totalPeople}</strong></td>
-        <td><button class="btn-delete" onclick='deleteAppt(${JSON.stringify(a)})'>刪除</button></td>
+  let rows="";
+  if(filtered.length===0){
+    rows=`<tr><td colspan="7"><div class="empty">尚無預約資料</div></td></tr>`;
+  }else{
+    filtered.forEach(a=>{
+      const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time};
+      const deps=(a.dependents||[]).map((d,i)=>{
+        const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time};
+        return `<div class="dep-line"><span class="tag tag-dep">眷${i+1}</span>${dd.name} · ${dd.date?fmtDate(dd.date):""} ${dd.time||""}</div>`;
+      }).join("");
+      rows+=`<tr>
+        <td>${emp.dept||""}</td>
+        <td><span class="tag tag-emp">員工</span> ${emp.name||""}<br>
+          <span style="font-size:11px;color:#64748b">${emp.date?fmtDate(emp.date):""} ${emp.time||""}</span>
+          ${deps}
+        </td>
+        <td style="text-align:center"><strong>${a.totalPeople||1}</strong></td>
+        <td style="font-size:11px;color:#64748b">${a.email||""}</td>
+        <td><button class="btn-delete" onclick="deleteAppt('${a.id}')">刪除</button></td>
       </tr>`;
     });
   }
 
-  root.innerHTML = `
+  root.innerHTML=`
     <div class="header">
       <div>
         <div class="header-title">🏥 健檢預約管理後台</div>
@@ -283,30 +284,22 @@ function renderAdmin() {
       <button class="btn btn-logout" onclick="logout()">登出</button>
     </div>
     <div class="main">
-
-      <!-- 統計卡片 -->
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-val">${allAppts.length}</div><div class="stat-label">預約筆數</div></div>
         <div class="stat-card"><div class="stat-val">${totalPeople}</div><div class="stat-label">總人數（含眷屬）</div></div>
         <div class="stat-card"><div class="stat-val">${totalDeps}</div><div class="stat-label">眷屬人數</div></div>
-        <div class="stat-card"><div class="stat-val">${totalLimit - totalBooked}</div><div class="stat-label">全局剩餘名額</div></div>
+        <div class="stat-card"><div class="stat-val">${totalLimit-totalBooked}</div><div class="stat-label">全局剩餘名額</div></div>
       </div>
-
-      <!-- Tab 切換 -->
       <div class="tab-row">
         <button class="tab-btn ${activeTab==="overview"?"active":""}" onclick="setTab('overview')">📊 時段名額總覽</button>
         <button class="tab-btn ${activeTab==="appts"?"active":""}" onclick="setTab('appts')">📋 預約名單（${allAppts.length} 筆）</button>
       </div>
-
-      <!-- 時段總覽 -->
-      ${activeTab==="overview" ? `
+      ${activeTab==="overview"?`
       <div class="card">
         <div class="card-title"><span>各時段剩餘名額</span></div>
         ${renderOverview()}
-      </div>` : ""}
-
-      <!-- 預約名單 -->
-      ${activeTab==="appts" ? `
+      </div>`:""}
+      ${activeTab==="appts"?`
       <div class="card">
         <div class="card-title">
           <span>預約名單（共 ${filtered.length} 筆）</span>
@@ -315,7 +308,7 @@ function renderAdmin() {
         <div class="filter-row">
           <select onchange="setFilter('date',this.value)">
             <option value="">— 所有日期 —</option>
-            ${allDates.map(d=>`<option value="${d}" ${filterDate===d?"selected":""}>${d}</option>`).join("")}
+            ${allDates.map(d=>`<option value="${d}" ${filterDate===d?"selected":""}>${fmtDate(d)}</option>`).join("")}
           </select>
           <select onchange="setFilter('time',this.value)">
             <option value="">— 所有時段 —</option>
@@ -326,18 +319,20 @@ function renderAdmin() {
             ${allDepts.map(d=>`<option value="${d}" ${filterDept===d?"selected":""}>${d}</option>`).join("")}
           </select>
         </div>
+        <div style="overflow-x:auto">
         <table>
-          <thead><tr><th>日期</th><th>時段</th><th>單位</th><th>員工</th><th>眷屬</th><th>人數</th><th>操作</th></tr></thead>
+          <thead><tr><th>單位</th><th>姓名／時段</th><th>人數</th><th>帳號</th><th>操作</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-      </div>` : ""}
+        </div>
+      </div>`:""}
     </div>`;
 }
 
-function renderNoAccess() {
-  root.innerHTML = `
+function renderNoAccess(){
+  root.innerHTML=`
     <div class="header"><div class="header-title">🏥 健檢預約管理後台</div></div>
-    <div class="main"><div class="no-access" style="text-align:center;padding:60px 20px">
+    <div class="main"><div style="text-align:center;padding:60px 20px">
       <div style="font-size:48px;margin-bottom:16px">🚫</div>
       <div style="font-size:20px;font-weight:900;color:#0f2942;margin-bottom:8px">您沒有管理員權限</div>
       <div style="font-size:13px;color:#64748b;margin-bottom:20px">帳號：${currentUser.email}</div>
@@ -345,8 +340,8 @@ function renderNoAccess() {
     </div></div>`;
 }
 
-function renderLogin() {
-  root.innerHTML = `
+function renderLogin(){
+  root.innerHTML=`
     <div class="header"><div class="header-title">🏥 健檢預約管理後台</div></div>
     <div class="main"><div style="text-align:center;padding:80px 20px">
       <div style="font-size:48px;margin-bottom:16px">🔐</div>
@@ -359,11 +354,11 @@ function renderLogin() {
     </div></div>`;
 }
 
-onAuthStateChanged(auth, async (user) => {
-  currentUser = user;
-  if (!user) { renderLogin(); return; }
-  if (!ADMIN_LIST.includes(user.email.toLowerCase())) { renderNoAccess(); return; }
-  root.innerHTML = `<div class="loading">載入資料中…</div>`;
+onAuthStateChanged(auth,async(user)=>{
+  currentUser=user;
+  if(!user){renderLogin();return;}
+  if(!ADMIN_LIST.includes(user.email.toLowerCase())){renderNoAccess();return;}
+  root.innerHTML=`<div class="loading">載入資料中…</div>`;
   await loadData();
 });
 </script>
