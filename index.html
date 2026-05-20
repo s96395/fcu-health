@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>員工健康檢查預約系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-sub">HEALTH EXAMINATION RESERVATION</div>
+    <div class="header-title">員工健康檢查預約系統</div>
+    <div class="header-desc">2025 年度 · 員工暨眷屬健康檢查</div>
+  </div>
+
+  <!-- Step Bar -->
+  <div class="stepbar">
+    <div class="stepbar-inner" id="stepbar"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main" id="main"></div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <div class="loading-text">送出中，請稍候…</div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
