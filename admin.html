@@ -157,12 +157,16 @@ function exportCSV(){
   const filtered=getFiltered();
   let csv="\uFEFF單位,員工姓名,員工日期,員工時段,眷屬名單,合計人數,預約帳號\n";
   filtered.forEach(a=>{
-    const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time};
+    const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time,mode:"online"};
+    const empTime=emp.mode==="self"?`自行預約(${emp.note||""})`:emp.time||"";
+    const empDate=emp.mode==="self"?"":emp.date||"";
     const deps=(a.dependents||[]).map(d=>{
-      const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time};
-      return `${dd.name}(${dd.date?fmtDate(dd.date):""} ${dd.time||""})`;
+      const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time,mode:"online"};
+      const depTime=dd.mode==="self"?`自行預約(${dd.note||""})`:dd.time||"";
+      const depDate=dd.mode==="self"?"":dd.date||"";
+      return `${dd.name}(${depDate?fmtDate(depDate):""} ${depTime})`;
     }).join("、")||"無";
-    csv+=`${emp.dept||""},${emp.name||""},${emp.date||""},${emp.time||""},"${deps}",${a.totalPeople||1},${a.email}\n`;
+    csv+=`${emp.dept||""},${emp.name||""},${empDate?fmtDate(empDate):""},${empTime},"${deps}",${a.totalPeople||1},${a.email}\n`;
   });
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   const a=document.createElement("a");
@@ -258,15 +262,23 @@ function renderAdmin(){
     rows=`<tr><td colspan="7"><div class="empty">尚無預約資料</div></td></tr>`;
   }else{
     filtered.forEach(a=>{
-      const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time};
+      const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time,mode:"online"};
+      // 員工時段顯示
+      const empTimeStr=emp.mode==="self"
+        ?`<span style="background:#fef9c3;color:#92400e;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700">自行預約</span> ${emp.note||""}`
+        :`${emp.date?fmtDate(emp.date):""} ${emp.time||""}`;
+      // 眷屬顯示
       const deps=(a.dependents||[]).map((d,i)=>{
-        const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time};
-        return `<div class="dep-line"><span class="tag tag-dep">眷${i+1}</span>${dd.name} · ${dd.date?fmtDate(dd.date):""} ${dd.time||""}</div>`;
+        const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time,mode:"online"};
+        const depTimeStr=dd.mode==="self"
+          ?`<span style="background:#fef9c3;color:#92400e;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700">自行預約</span> ${dd.note||""}`
+          :`${dd.date?fmtDate(dd.date):""} ${dd.time||""}`;
+        return `<div class="dep-line"><span class="tag tag-dep">眷${i+1}</span>${dd.name} · ${depTimeStr}</div>`;
       }).join("");
       rows+=`<tr>
         <td>${emp.dept||""}</td>
         <td><span class="tag tag-emp">員工</span> ${emp.name||""}<br>
-          <span style="font-size:11px;color:#64748b">${emp.date?fmtDate(emp.date):""} ${emp.time||""}</span>
+          <span style="font-size:11px;color:#64748b">${empTimeStr}</span>
           ${deps}
         </td>
         <td style="text-align:center"><strong>${a.totalPeople||1}</strong></td>
