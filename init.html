@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>初始化時段資料</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 60px auto; padding: 20px; }
+    button { background: #0d5c8a; color: #fff; border: none; padding: 14px 32px; font-size: 16px; border-radius: 10px; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    #log { margin-top: 24px; background: #f1f5f9; border-radius: 10px; padding: 16px; font-size: 13px; line-height: 2; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>Firestore 時段初始化</h2>
+  <p>點下方按鈕，將所有時段寫入 Firestore。<br>只需執行一次，完成後可關閉此頁。</p>
+  <button id="btn" onclick="run()">開始初始化</button>
+  <div id="log">等待執行…</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCxddo17qMN6PDO8WPFWcU4dPHrt5UIwQs",
+  authDomain:        "fcu-health.firebaseapp.com",
+  projectId:         "fcu-health",
+  storageBucket:     "fcu-health.firebasestorage.app",
+  messagingSenderId: "237679721411",
+  appId:             "1:237679721411:web:2ae5262caf2e1025b75b76"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const SLOTS_DATA = {
+  "2025-07-18": [
+    { time: "07:30", limit: 2 }, { time: "07:45", limit: 4 },
+    { time: "08:00", limit: 9 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-07-19": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-07-25": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-07-26": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-01": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-02": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-08": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-09": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-15": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-16": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-22": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-23": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-29": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-08-30": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-09-05": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 2 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-09-06": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-09-12": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 6 }, { time: "09:30", limit: 4 }
+  ],
+  "2025-09-13": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-09-19": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-09-20": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-09-26": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+  "2025-09-27": [
+    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
+  ],
+};
+
+const log = document.getElementById("log");
+const btn = document.getElementById("btn");
+
+function addLog(msg) {
+  log.textContent += msg + "\n";
+  log.scrollTop = log.scrollHeight;
+}
+
+window.run = async () => {
+  btn.disabled = true;
+  log.textContent = "";
+  addLog("開始寫入...");
+  let count = 0;
+  try {
+    for (const [date, slots] of Object.entries(SLOTS_DATA)) {
+      for (const slot of slots) {
+        const id = `${date}_${slot.time.replace(":", "")}`;
+        await setDoc(doc(db, "slots", id), {
+          date,
+          time: slot.time,
+          limit: slot.limit,
+          booked: 0
+        });
+        count++;
+        addLog(`✓ ${date} ${slot.time}（上限 ${slot.limit} 位）`);
+      }
+    }
+    addLog(`\n✅ 完成！共寫入 ${count} 個時段`);
+    addLog("可以關閉此頁面了。");
+  } catch (err) {
+    addLog("❌ 錯誤：" + err.message);
+    btn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>
