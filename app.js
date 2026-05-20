@@ -125,9 +125,11 @@ let state = {
 // ── 工具函式 ──────────────────────────────────
 
 function formatDate(dateStr) {
-  const d  = new Date(dateStr + "T00:00:00");
-  const m  = d.getMonth() + 1;
-  const dy = d.getDate();
+  // 直接解析字串，避免時區偏移造成星期錯誤
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d  = new Date(year, month - 1, day);
+  const m  = month;
+  const dy = day;
   const wd = WEEKDAY_ZH[d.getDay()];
   return { m, dy, wd, full: `${m}/${dy} (${wd})` };
 }
