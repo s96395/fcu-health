@@ -36,27 +36,27 @@ const SLOTS_DATA = {
   "2026-09-27":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
 };
 const WD=["日","一","二","三","四","五","六"];
-const STEPS=["選擇日期","選擇時段","填寫資料","預約完成"];
+const STEPS=["填寫資料","預約完成"];
 
-// dependents: [{name:"", time:""}]
+// person: { name, date, time, expanded }
+// emp: { name, dept, date, time, expanded }
 let state={
-  user:null, myAppt:null, step:0,
-  selectedDate:null, selectedTime:null, booked:{},
-  dept:"", empName:"", dependents:[],
+  user:null, myAppt:null, step:0, booked:{},
+  emp:{ name:"", dept:"", date:"", time:"", expanded:true },
+  dependents:[], // [{name, date, time, expanded}]
   errors:{}, confirmed:null, submitting:false,
 };
 
 function fmtDate(ds){
   const [y,m,d]=ds.split("-").map(Number);
   const dt=new Date(y,m-1,d);
-  return {m,d,wd:WD[dt.getDay()],full:`${m}/${d} (${WD[dt.getDay()]})`};
+  return {m,d,wd:WD[dt.getDay()],full:`${m}/${d}(${WD[dt.getDay()]})`};
 }
 function getLimit(date,time){return SLOTS_DATA[date]?.find(s=>s.time===time)?.limit??0;}
 function getBooked(date,time){return state.booked[date]?.[time]??0;}
 function getRemaining(date,time){return getLimit(date,time)-getBooked(date,time);}
 function el(id){return document.getElementById(id);}
 function setLoading(v){el("loadingOverlay").classList.toggle("show",v);}
-
 function showLogin(){el("loginScreen").style.display="flex";el("appScreen").style.display="none";}
 function showApp(){el("loginScreen").style.display="none";el("appScreen").style.display="block";}
 
@@ -86,219 +86,200 @@ function renderStepbar(){
   }).join("");
 }
 
-function renderAlreadyBooked(){
-  const a=state.myAppt;
-  const {full}=fmtDate(a.date);
-  const deps=(a.dependents||[]).map((dep,i)=>{
-    const d=typeof dep==="object"?dep:{name:dep,time:a.time};
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f0fdf4;border-radius:10px;margin-bottom:8px">
-      <span style="background:#dcfce7;color:#15803d;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700">眷屬 ${i+1}</span>
-      <span style="font-size:15px;font-weight:800">${d.name}</span>
-      <span style="font-size:12px;color:#64748b;margin-left:auto">${d.time}</span>
-    </div>`;
-  }).join("");
-  el("main").innerHTML=`
-    <div style="text-align:center;padding:20px 0">
-      <div style="font-size:40px;margin-bottom:12px">📋</div>
-      <div style="font-size:20px;font-weight:900;color:#0f2942;margin-bottom:6px">您已完成預約</div>
-      <div style="font-size:13px;color:#64748b;margin-bottom:24px">如需更改請聯絡福委</div>
-      <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 3px 16px rgba(0,0,0,.07);text-align:left;max-width:480px;margin:0 auto">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div style="background:#f0f9ff;border-radius:12px;padding:14px">
-            <div style="font-size:11px;color:#64748b;margin-bottom:4px">健檢日期</div>
-            <div style="font-size:16px;font-weight:900">${full}</div>
-          </div>
-          <div style="background:#f0f9ff;border-radius:12px;padding:14px">
-            <div style="font-size:11px;color:#64748b;margin-bottom:4px">員工時段</div>
-            <div style="font-size:26px;font-weight:900;color:#0d5c8a">${a.time}</div>
-          </div>
-        </div>
-        <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;font-weight:700">預約名單</div>
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#eff6ff;border-radius:10px;margin-bottom:8px">
-          <span style="background:#dbeafe;color:#1d4ed8;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700">員工</span>
-          <span style="font-size:15px;font-weight:800">${a.empName}</span>
-          <span style="font-size:12px;color:#64748b;margin-left:auto">${a.time} · ${a.dept}</span>
-        </div>
-        ${deps}
-        <div style="margin-top:12px;padding:12px 16px;background:#f8fafc;border-radius:10px;display:flex;justify-content:space-between">
-          <span style="color:#64748b;font-size:13px;font-weight:600">合計人數</span>
-          <span style="font-weight:900;color:#0d5c8a;font-size:18px">${a.totalPeople} 位</span>
-        </div>
-      </div>
-    </div>`;
+function renderUserBar(user){
+  el("userBar").innerHTML=`
+    <div class="user-bar-name">👤 ${user.displayName||user.email}</div>
+    <button class="btn-logout" onclick="doLogout()">登出</button>`;
 }
 
-function renderStep0(){
+// ── 日期＋時段選擇器（嵌入式）────────────────
+function renderDateTimePicker(person, prefix, selectedDate, selectedTime){
   const months={};
   Object.keys(SLOTS_DATA).sort().forEach(date=>{
     const {m}=fmtDate(date);
     if(!months[m]) months[m]=[];
     months[m].push(date);
   });
-  let html=`<div style="font-size:20px;font-weight:900;color:#0f2942;text-align:center;margin-bottom:6px">選擇健檢日期</div>
-    <div style="font-size:13px;color:#64748b;text-align:center;margin-bottom:24px">點選日期後再選員工時段，眷屬可另選不同時段</div>`;
+
+  let dateHtml=`<div style="margin-bottom:12px">`;
   for(const [month,dates] of Object.entries(months)){
-    html+=`<div class="month-block">
-      <div class="month-header"><div class="month-badge">${month}</div><div class="month-label">${month} 月</div></div>
-      <div class="date-grid">`;
+    dateHtml+=`<div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1px;margin-bottom:6px">${month} 月</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">`;
     for(const date of dates.sort()){
       const {full}=fmtDate(date);
       const totalLimit=SLOTS_DATA[date].reduce((a,s)=>a+s.limit,0);
       const totalBooked=SLOTS_DATA[date].reduce((a,s)=>a+getBooked(date,s.time),0);
       const remaining=totalLimit-totalBooked;
       const isFull=remaining===0;
-      const pct=Math.min((totalBooked/totalLimit)*100,100);
-      html+=`<button class="date-card ${isFull?"full":""}" ${isFull?"disabled":`onclick="selectDate('${date}')"`}>
-        <div class="date-name">${full}</div>
-        <div class="date-remain ${isFull?"full":remaining<=5?"low":""}">${isFull?"已額滿":`剩 ${remaining} 位`}</div>
-        <div class="progress-bar"><div class="progress-fill ${isFull?"full":remaining<=5?"low":""}" style="width:${pct}%"></div></div>
-        <div class="date-count">${totalBooked}/${totalLimit}</div>
+      const isSelected=selectedDate===date;
+      dateHtml+=`<button onclick="selectPersonDate('${prefix}','${date}')"
+        style="border:2px solid ${isSelected?"#0d5c8a":isFull?"#e2e8f0":"#e2e8f0"};
+        border-radius:10px;padding:6px 10px;cursor:${isFull?"not-allowed":"pointer"};
+        background:${isSelected?"#0d5c8a":isFull?"#f8fafc":"#fff"};
+        color:${isSelected?"#fff":isFull?"#cbd5e1":"#0f2942"};
+        font-size:12px;font-weight:700;font-family:inherit;
+        opacity:${isFull&&!isSelected?0.5:1};transition:all .15s"
+        ${isFull&&!isSelected?"disabled":""}>
+        ${full}<br>
+        <span style="font-size:10px;font-weight:400;color:${isSelected?"rgba(255,255,255,0.8)":isFull?"#cbd5e1":"#94a3b8"}">
+          ${isFull?"額滿":`剩${remaining}`}
+        </span>
       </button>`;
     }
-    html+=`</div></div>`;
+    dateHtml+=`</div></div>`;
   }
-  el("main").innerHTML=html;
-}
+  dateHtml+=`</div>`;
 
-function renderStep1(){
-  const {full}=fmtDate(state.selectedDate);
-  let html=`<div class="page-header">
-    <button class="btn-back" onclick="goBack(1)">← 返回</button>
-    <div><div class="page-header-text">${full}</div><div class="page-header-subtext">選擇員工的報到時段（眷屬可在下一步另選）</div></div>
-  </div><div class="slot-grid">`;
-  for(const slot of SLOTS_DATA[state.selectedDate]){
-    const cnt=getBooked(state.selectedDate,slot.time);
-    const rem=slot.limit-cnt;
-    const isFull=rem<=0;
-    const pct=Math.min((cnt/slot.limit)*100,100);
-    html+=`<button class="slot-card ${isFull?"full":""}" ${isFull?"disabled":`onclick="selectTime('${slot.time}')"`}>
-      <div class="slot-time ${isFull?"full":""}">${slot.time}</div>
-      <div class="slot-meta">
-        <span class="slot-remain ${isFull?"full":rem<=3?"low":""}">${isFull?"已額滿":`剩 ${rem} 位`}</span>
-        ${!isFull?`<span class="slot-arrow">選擇 →</span>`:""}
-      </div>
-      <div class="progress-bar" style="margin-top:8px"><div class="progress-fill ${isFull?"full":rem<=3?"low":""}" style="width:${pct}%"></div></div>
-      <div class="slot-count">${cnt}/${slot.limit} 已預約</div>
-    </button>`;
-  }
-  html+=`</div>`;
-  el("main").innerHTML=html;
-}
-
-function renderStep2(){
-  const {full}=fmtDate(state.selectedDate);
-  const empRem=getRemaining(state.selectedDate,state.selectedTime);
-  const deptOptions=DEPT_LIST.map(d=>`<option value="${d}" ${state.dept===d?"selected":""}>${d}</option>`).join("");
-
-  function timeOptions(selTime){
-    return SLOTS_DATA[state.selectedDate].map(slot=>{
-      const rem=getRemaining(state.selectedDate,slot.time);
-      const isFull=rem<=0&&selTime!==slot.time;
-      return `<option value="${slot.time}" ${selTime===slot.time?"selected":""} ${isFull?"disabled":""}>
-        ${slot.time}　${rem<=0?"（額滿）":`剩 ${rem} 位`}
-      </option>`;
-    }).join("");
-  }
-
-  let depRows=state.dependents.length===0
-    ?`<div class="dep-empty">無眷屬同行 — 可點選「新增眷屬」加入</div>`
-    :state.dependents.map((dep,idx)=>`
-      <div class="dep-row" style="align-items:flex-start">
-        <div class="dep-badge" style="margin-top:9px">眷${idx+1}</div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-          <input class="form-control ${state.errors["dep_"+idx+"_name"]?"error":""}" type="text"
-            placeholder="眷屬 ${idx+1} 姓名" value="${dep.name||""}"
-            oninput="updateDepName(${idx},this.value)"/>
-          ${state.errors["dep_"+idx+"_name"]?`<div class="form-error">${state.errors["dep_"+idx+"_name"]}</div>`:""}
-          <select class="form-control ${state.errors["dep_"+idx+"_time"]?"error":""}"
-            onchange="updateDepTime(${idx},this.value)">
-            <option value="">— 選擇時段 —</option>
-            ${timeOptions(dep.time||"")}
-          </select>
-          ${state.errors["dep_"+idx+"_time"]?`<div class="form-error">${state.errors["dep_"+idx+"_time"]}</div>`:""}
-          ${state.errors["dep_"+idx+"_full"]?`<div style="font-size:12px;color:#d97706;margin-top:2px">⚠️ ${state.errors["dep_"+idx+"_full"]}</div>`:""}
+  let timeHtml="";
+  if(selectedDate){
+    const slots=SLOTS_DATA[selectedDate]||[];
+    timeHtml=`<div style="margin-top:4px">
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1px;margin-bottom:8px">選擇時段</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`;
+    for(const slot of slots){
+      const rem=getRemaining(selectedDate,slot.time);
+      const isFull=rem<=0;
+      const isSelected=selectedTime===slot.time;
+      const pct=Math.min(((getBooked(selectedDate,slot.time))/slot.limit)*100,100);
+      timeHtml+=`<button onclick="selectPersonTime('${prefix}','${slot.time}')"
+        style="border:2px solid ${isSelected?"#0d5c8a":isFull?"#e2e8f0":"#e2e8f0"};
+        border-radius:12px;padding:12px;cursor:${isFull?"not-allowed":"pointer"};
+        background:${isSelected?"#0d5c8a":isFull?"#f8fafc":"#fff"};
+        text-align:left;font-family:inherit;transition:all .15s;
+        opacity:${isFull&&!isSelected?0.5:1}"
+        ${isFull&&!isSelected?"disabled":""}>
+        <div style="font-size:20px;font-weight:900;color:${isSelected?"#fff":isFull?"#cbd5e1":"#0d5c8a"}">${slot.time}</div>
+        <div style="font-size:11px;color:${isSelected?"rgba(255,255,255,0.8)":isFull?"#cbd5e1":"#64748b"};margin-top:4px">
+          ${isFull?"已額滿":`剩 ${rem} 位`}
         </div>
-        <button class="btn-remove" style="margin-top:7px;flex-shrink:0" onclick="removeDependent(${idx})">✕</button>
-      </div>`).join("");
+        <div style="margin-top:6px;height:4px;border-radius:2px;background:${isSelected?"rgba(255,255,255,0.3)":"#e2e8f0"};overflow:hidden">
+          <div style="height:100%;width:${pct}%;border-radius:2px;background:${isSelected?"rgba(255,255,255,0.8)":rem<=3?"#ef4444":"#0d5c8a"}"></div>
+        </div>
+      </button>`;
+    }
+    timeHtml+=`</div></div>`;
+  }
 
-  el("main").innerHTML=`
-    <div class="page-header">
-      <button class="btn-back" onclick="goBack(2)">← 返回</button>
-      <div class="page-header-text">填寫預約資料</div>
+  return dateHtml+timeHtml;
+}
+
+// ── 人員卡片 ──────────────────────────────────
+function renderPersonCard(person, prefix, label, tagColor, nameErr, dateErr, timeErr, showDept=false){
+  const isExpanded=person.expanded;
+  const hasSummary=person.name&&person.date&&person.time;
+  const {full}=person.date?fmtDate(person.date):{full:""};
+  const deptOptions=showDept?DEPT_LIST.map(d=>`<option value="${d}" ${person.dept===d?"selected":""}>${d}</option>`).join(""):"";
+
+  return `<div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:12px;overflow:hidden">
+    <!-- 卡片 Header -->
+    <div onclick="toggleExpand('${prefix}')" style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;user-select:none">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="background:${tagColor};color:#fff;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:800">${label}</span>
+        ${hasSummary&&!isExpanded
+          ?`<span style="font-size:14px;font-weight:700;color:#0f2942">${person.name}</span>
+            <span style="font-size:12px;color:#64748b">· ${full} ${person.time}</span>`
+          :person.name
+            ?`<span style="font-size:14px;font-weight:700;color:#0f2942">${person.name}</span>`
+            :`<span style="font-size:13px;color:#94a3b8">點此展開填寫</span>`
+        }
+      </div>
+      <span style="font-size:18px;color:#94a3b8;transition:transform .2s;display:inline-block;transform:rotate(${isExpanded?180:0}deg)">▾</span>
     </div>
-    <div class="summary-bar">
-      <div class="summary-item"><div class="summary-sub">日期</div><div class="summary-val">${full}</div></div>
-      <div class="summary-divider"></div>
-      <div class="summary-item"><div class="summary-sub">員工時段</div><div class="summary-val big">${state.selectedTime}</div></div>
-      <div class="summary-divider"></div>
-      <div class="summary-item"><div class="summary-sub">該時段剩餘</div><div class="summary-val ${empRem<=3?"red":"green"}">${empRem} 位</div></div>
-    </div>
-    ${state.errors.quota?`<div class="error-banner">⚠️ ${state.errors.quota}</div>`:""}
-    <div class="form-card">
-      <div class="form-group">
-        <label class="form-label">單位／部門 <span class="form-required">*</span></label>
-        <select class="form-control ${state.errors.dept?"error":""}" onchange="updateDept(this.value)">
+
+    <!-- 卡片內容 -->
+    ${isExpanded?`<div style="padding:0 18px 18px;border-top:1px solid #f1f5f9">
+      ${showDept?`<div style="margin-top:14px;margin-bottom:12px">
+        <label style="font-size:12px;font-weight:800;color:#334155;display:block;margin-bottom:6px">單位／部門 <span style="color:#ef4444">*</span></label>
+        <select class="form-control ${state.errors.dept?"error":""}" onchange="updatePersonDept(this.value)" style="width:100%">
           <option value="">— 請選擇單位 —</option>${deptOptions}
         </select>
         ${state.errors.dept?`<div class="form-error">${state.errors.dept}</div>`:""}
+      </div>`:""}
+      <div style="margin-top:14px;margin-bottom:14px">
+        <label style="font-size:12px;font-weight:800;color:#334155;display:block;margin-bottom:6px">姓名 <span style="color:#ef4444">*</span></label>
+        <input class="form-control ${nameErr?"error":""}" type="text"
+          placeholder="請輸入姓名" value="${person.name}"
+          oninput="updatePersonName('${prefix}',this.value)"
+          style="width:100%"/>
+        ${nameErr?`<div class="form-error">${nameErr}</div>`:""}
       </div>
-      <div class="form-group">
-        <label class="form-label">員工姓名 <span class="form-required">*</span></label>
-        <input class="form-control ${state.errors.empName?"error":""}" type="text"
-          placeholder="請輸入員工姓名" value="${state.empName}"
-          oninput="updateEmpName(this.value)"/>
-        ${state.errors.empName?`<div class="form-error">${state.errors.empName}</div>`:""}
-      </div>
-      <div class="form-divider">
-        <div class="dep-header">
-          <div>
-            <div class="dep-header-text">眷屬名單</div>
-            <div class="dep-header-sub">每位眷屬可選不同時段，各占 1 個名額</div>
-          </div>
-          <button class="btn-add" onclick="addDependent()">＋ 新增眷屬</button>
-        </div>
-        <div id="depList">${depRows}</div>
-        <div class="quota-summary">
-          <div class="quota-text">本次預約：員工 1 位${state.dependents.length>0?` ＋ 眷屬 ${state.dependents.length} 位`:""}</div>
-          <div class="quota-count">${1+state.dependents.length} 位</div>
-        </div>
-      </div>
-      <button class="btn-submit" onclick="handleSubmit()" ${state.submitting?"disabled":""}>
-        ${state.submitting?"送出中…":"確認預約"}
-      </button>
-    </div>`;
+      <label style="font-size:12px;font-weight:800;color:#334155;display:block;margin-bottom:10px">選擇日期與時段 <span style="color:#ef4444">*</span></label>
+      ${dateErr?`<div class="form-error" style="margin-bottom:8px">${dateErr}</div>`:""}
+      ${timeErr?`<div class="form-error" style="margin-bottom:8px">${timeErr}</div>`:""}
+      ${renderDateTimePicker(person, prefix, person.date, person.time)}
+    </div>`:""}
+  </div>`;
 }
 
-function renderStep3(){
-  const {full}=fmtDate(state.confirmed.date);
+// ── Step 0：填寫資料 ──────────────────────────
+function renderStep0(){
+  const e=state.errors;
+
+  let depCards=state.dependents.map((dep,idx)=>`
+    <div style="position:relative">
+      ${renderPersonCard(dep,"dep_"+idx,"眷屬 "+(idx+1),"#059669",
+        e["dep_"+idx+"_name"],e["dep_"+idx+"_date"],e["dep_"+idx+"_time"])}
+      <button onclick="removeDependent(${idx})"
+        style="position:absolute;top:12px;right:48px;background:none;border:none;color:#ef4444;font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>`).join("");
+
+  el("main").innerHTML=`
+    <div style="font-size:18px;font-weight:900;color:#0f2942;margin-bottom:6px">填寫預約資料</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:20px">員工與眷屬可選擇不同日期及時段</div>
+
+    ${e.submit?`<div class="error-banner">⚠️ ${e.submit}</div>`:""}
+
+    <!-- 員工卡片 -->
+    ${renderPersonCard(state.emp,"emp","員工","#0d5c8a",
+      e.emp_name,e.emp_date,e.emp_time,true)}
+
+    <!-- 眷屬卡片 -->
+    ${depCards}
+
+    <!-- 新增眷屬按鈕 -->
+    <button onclick="addDependent()"
+      style="width:100%;border:2px dashed #cbd5e1;background:#fff;border-radius:14px;
+      padding:14px;font-size:14px;font-weight:700;color:#64748b;cursor:pointer;
+      font-family:inherit;margin-bottom:20px;transition:all .2s"
+      onmouseover="this.style.borderColor='#0d5c8a';this.style.color='#0d5c8a'"
+      onmouseout="this.style.borderColor='#cbd5e1';this.style.color='#64748b'">
+      ＋ 新增眷屬
+    </button>
+
+    <!-- 送出 -->
+    <button class="btn-submit" onclick="handleSubmit()" ${state.submitting?"disabled":""}>
+      ${state.submitting?"送出中…":"確認預約"}
+    </button>`;
+}
+
+// ── Step 1：完成 ──────────────────────────────
+function renderStep1(){
+  const {full}=fmtDate(state.confirmed.emp.date);
   const depList=state.confirmed.dependents.map((dep,i)=>`
     <div class="result-person dep">
       <span class="tag tag-dep">眷屬 ${i+1}</span>
       <span class="result-person-name">${dep.name}</span>
-      <span class="result-person-dept">${dep.time}</span>
+      <span class="result-person-dept">${fmtDate(dep.date).full} ${dep.time}</span>
     </div>`).join("");
   const failList=state.confirmed.failed||[];
   const failNote=failList.length>0
     ?`<div class="error-banner" style="text-align:left;margin-bottom:16px">
-        ⚠️ 以下眷屬時段已額滿，未完成預約，請聯絡福委安排：<br>
-        ${failList.map(f=>`<strong>${f.name}</strong>（${f.time}）`).join("、")}
+        ⚠️ 以下眷屬時段已額滿，未完成預約，請聯絡福委：<br>
+        ${failList.map(f=>`<strong>${f.name}</strong>（${fmtDate(f.date).full} ${f.time}）`).join("、")}
       </div>`:""
   el("main").innerHTML=`
     <div class="success-wrap">
       <div class="success-icon">✓</div>
-      <div class="success-title">${failList.length>0?"部分預約成功":"預約成功！"}</div>
+      <div class="success-title">${failList.length>0?"部分預約成功！":"預約成功！"}</div>
       <div class="success-sub">以下是您的預約資訊，請準時報到</div>
       ${failNote}
       <div class="result-card">
-        <div class="result-grid">
-          <div class="result-item"><div class="result-item-sub">健檢日期</div><div class="result-item-val">${full}</div></div>
-          <div class="result-item"><div class="result-item-sub">員工時段</div><div class="result-item-val big">${state.confirmed.time}</div></div>
-        </div>
         <div class="result-list-title">預約名單</div>
         <div class="result-person emp">
           <span class="tag tag-emp">員工</span>
-          <span class="result-person-name">${state.confirmed.empName}</span>
-          <span class="result-person-dept">${state.confirmed.time} · ${state.confirmed.dept}</span>
+          <span class="result-person-name">${state.confirmed.emp.name}</span>
+          <span class="result-person-dept">${fmtDate(state.confirmed.emp.date).full} ${state.confirmed.emp.time} · ${state.confirmed.emp.dept}</span>
         </div>
         ${depList}
         <div class="result-total">
@@ -323,124 +304,158 @@ function render(){
   if(state.myAppt){renderAlreadyBooked();return;}
   if(state.step===0) renderStep0();
   else if(state.step===1) renderStep1();
-  else if(state.step===2) renderStep2();
-  else if(state.step===3) renderStep3();
 }
 
-function renderUserBar(user){
-  el("userBar").innerHTML=`
-    <div class="user-bar-name">👤 ${user.displayName||user.email}</div>
-    <button class="btn-logout" onclick="doLogout()">登出</button>`;
+// ── 已預約 ────────────────────────────────────
+function renderAlreadyBooked(){
+  const a=state.myAppt;
+  const deps=(a.dependents||[]).map((dep,i)=>{
+    const d=typeof dep==="object"?dep:{name:dep,date:a.emp?.date||a.date,time:a.emp?.time||a.time};
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f0fdf4;border-radius:10px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="background:#dcfce7;color:#15803d;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700">眷屬 ${i+1}</span>
+      <span style="font-size:15px;font-weight:800">${d.name}</span>
+      <span style="font-size:12px;color:#64748b;margin-left:auto">${d.date?fmtDate(d.date).full:""} ${d.time||""}</span>
+    </div>`;
+  }).join("");
+  const empDate=a.emp?.date||a.date;
+  const empTime=a.emp?.time||a.time;
+  el("main").innerHTML=`
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:40px;margin-bottom:12px">📋</div>
+      <div style="font-size:20px;font-weight:900;color:#0f2942;margin-bottom:6px">您已完成預約</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:24px">如需更改請聯絡福委</div>
+      <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 3px 16px rgba(0,0,0,.07);text-align:left;max-width:480px;margin:0 auto">
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;font-weight:700">預約名單</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#eff6ff;border-radius:10px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="background:#dbeafe;color:#1d4ed8;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700">員工</span>
+          <span style="font-size:15px;font-weight:800">${a.emp?.name||a.empName}</span>
+          <span style="font-size:12px;color:#64748b;margin-left:auto">${empDate?fmtDate(empDate).full:""} ${empTime} · ${a.emp?.dept||a.dept}</span>
+        </div>
+        ${deps}
+      </div>
+    </div>`;
 }
 
 // ── 事件 ──────────────────────────────────────
-window.selectDate=(date)=>{state.selectedDate=date;state.step=1;render();};
-window.selectTime=(time)=>{state.selectedTime=time;state.step=2;render();};
-window.goBack=(fromStep)=>{state.step=fromStep-1;state.errors={};render();};
-window.updateDept=(val)=>{state.dept=val;state.errors.dept=undefined;};
-window.updateEmpName=(val)=>{state.empName=val;state.errors.empName=undefined;};
-window.updateDepName=(idx,val)=>{
-  if(!state.dependents[idx]) state.dependents[idx]={name:"",time:""};
-  state.dependents[idx].name=val;
-  state.errors["dep_"+idx+"_name"]=undefined;
+window.toggleExpand=(prefix)=>{
+  if(prefix==="emp"){
+    state.emp.expanded=!state.emp.expanded;
+  } else {
+    const idx=parseInt(prefix.split("_")[1]);
+    state.dependents[idx].expanded=!state.dependents[idx].expanded;
+  }
+  renderStep0();
 };
-window.updateDepTime=(idx,val)=>{
-  if(!state.dependents[idx]) state.dependents[idx]={name:"",time:""};
-  state.dependents[idx].time=val;
-  state.errors["dep_"+idx+"_time"]=undefined;
-  state.errors["dep_"+idx+"_full"]=undefined;
-  renderStep2();
+
+window.updatePersonDept=(val)=>{
+  state.emp.dept=val;
+  state.errors.dept=undefined;
 };
-window.addDependent=()=>{state.dependents.push({name:"",time:""});renderStep2();};
+
+window.updatePersonName=(prefix,val)=>{
+  if(prefix==="emp"){state.emp.name=val;state.errors.emp_name=undefined;}
+  else{const idx=parseInt(prefix.split("_")[1]);state.dependents[idx].name=val;state.errors["dep_"+idx+"_name"]=undefined;}
+};
+
+window.selectPersonDate=(prefix,date)=>{
+  if(prefix==="emp"){state.emp.date=date;state.emp.time="";state.errors.emp_date=undefined;}
+  else{const idx=parseInt(prefix.split("_")[1]);state.dependents[idx].date=date;state.dependents[idx].time="";state.errors["dep_"+idx+"_date"]=undefined;}
+  renderStep0();
+};
+
+window.selectPersonTime=(prefix,time)=>{
+  if(prefix==="emp"){state.emp.time=time;state.errors.emp_time=undefined;}
+  else{const idx=parseInt(prefix.split("_")[1]);state.dependents[idx].time=time;state.errors["dep_"+idx+"_time"]=undefined;}
+  renderStep0();
+};
+
+window.addDependent=()=>{
+  state.dependents.push({name:"",date:"",time:"",expanded:true});
+  renderStep0();
+};
+
 window.removeDependent=(idx)=>{
   state.dependents.splice(idx,1);
-  const errs={};
-  Object.entries(state.errors).forEach(([k,v])=>{
-    const m=k.match(/^dep_(\d+)_(.+)$/);
-    if(!m){errs[k]=v;return;}
-    const i=parseInt(m[1]);
-    if(i<idx) errs[k]=v;
-    else if(i>idx) errs["dep_"+(i-1)+"_"+m[2]]=v;
-  });
-  state.errors=errs;
-  renderStep2();
+  renderStep0();
 };
 
 window.handleSubmit=async()=>{
   const errors={};
-  if(!state.dept) errors.dept="請選擇單位";
-  if(!state.empName.trim()) errors.empName="請填寫員工姓名";
+  if(!state.emp.dept) errors.dept="請選擇單位";
+  if(!state.emp.name.trim()) errors.emp_name="請填寫員工姓名";
+  if(!state.emp.date) errors.emp_date="請選擇日期";
+  if(!state.emp.time) errors.emp_time="請選擇時段";
+  const empRem=getRemaining(state.emp.date,state.emp.time);
+  if(state.emp.date&&state.emp.time&&empRem<=0) errors.emp_time="此時段已額滿，請重新選擇";
   state.dependents.forEach((dep,i)=>{
-    if(!dep.name||!dep.name.trim()) errors["dep_"+i+"_name"]="請填寫眷屬姓名";
+    if(!dep.name.trim()) errors["dep_"+i+"_name"]="請填寫眷屬姓名";
+    if(!dep.date) errors["dep_"+i+"_date"]="請選擇日期";
     if(!dep.time) errors["dep_"+i+"_time"]="請選擇時段";
   });
-  // 員工名額檢查
-  const empRem=getRemaining(state.selectedDate,state.selectedTime);
-  if(empRem<=0) errors.quota="您選擇的時段已額滿，請返回重新選擇";
-  if(Object.keys(errors).length){state.errors=errors;renderStep2();return;}
+  if(Object.keys(errors).length){
+    // 展開有錯誤的卡片
+    if(errors.emp_name||errors.emp_date||errors.emp_time||errors.dept) state.emp.expanded=true;
+    state.dependents.forEach((dep,i)=>{
+      if(errors["dep_"+i+"_name"]||errors["dep_"+i+"_date"]||errors["dep_"+i+"_time"]) dep.expanded=true;
+    });
+    state.errors=errors;renderStep0();return;
+  }
 
   state.submitting=true;setLoading(true);
-
-  // 員工預約
   const failed=[];
   const succeededDeps=[];
+
+  // 員工預約
   try{
-    const empSlotId=`${state.selectedDate}_${state.selectedTime.replace(":","")}`
-    const empSlotRef=doc(db,"slots",empSlotId);
+    const slotId=`${state.emp.date}_${state.emp.time.replace(":","")}`
+    const slotRef=doc(db,"slots",slotId);
     const apptRef=doc(collection(db,"appointments"));
     await runTransaction(db,async(tx)=>{
-      const snap=await tx.get(empSlotRef);
+      const snap=await tx.get(slotRef);
       if(!snap.exists()) throw new Error("查無此時段");
       const {booked,limit}=snap.data();
-      if(booked+1>limit) throw new Error("您選擇的時段已額滿");
-      tx.update(empSlotRef,{booked:booked+1});
+      if(booked+1>limit) throw new Error("您選擇的時段已額滿，請重新選擇");
+      tx.update(slotRef,{booked:booked+1});
       tx.set(apptRef,{
-        date:state.selectedDate,time:state.selectedTime,
-        dept:state.dept,empName:state.empName,
-        dependents:state.dependents,
-        totalPeople:1,
+        emp:{name:state.emp.name,dept:state.emp.dept,date:state.emp.date,time:state.emp.time},
+        dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time})),
         email:state.user.email,
+        totalPeople:1+state.dependents.length,
         createdAt:serverTimestamp()
       });
     });
   }catch(e){
     state.submitting=false;setLoading(false);
-    state.errors={quota:e.message};
-    renderStep2();return;
+    state.errors={submit:e.message};
+    state.emp.expanded=true;
+    renderStep0();return;
   }
 
-  // 眷屬各自預約
+  // 眷屬各自扣名額
   for(const dep of state.dependents){
     try{
-      const slotId=`${state.selectedDate}_${dep.time.replace(":","")}`
+      const slotId=`${dep.date}_${dep.time.replace(":","")}`
       const slotRef=doc(db,"slots",slotId);
-      const depRef=doc(collection(db,"dep_appointments"));
       await runTransaction(db,async(tx)=>{
         const snap=await tx.get(slotRef);
         if(!snap.exists()) throw new Error("查無此時段");
         const {booked,limit}=snap.data();
         if(booked+1>limit) throw new Error("額滿");
         tx.update(slotRef,{booked:booked+1});
-        tx.set(depRef,{
-          date:state.selectedDate,time:dep.time,
-          empName:state.empName,depName:dep.name,
-          email:state.user.email,
-          createdAt:serverTimestamp()
-        });
       });
       succeededDeps.push(dep);
     }catch(e){
-      failed.push({name:dep.name,time:dep.time});
+      failed.push(dep);
     }
   }
 
   state.confirmed={
-    date:state.selectedDate,time:state.selectedTime,
-    dept:state.dept,empName:state.empName,
-    dependents:succeededDeps,failed
+    emp:{...state.emp},
+    dependents:succeededDeps.map(d=>({name:d.name,date:d.date,time:d.time})),
+    failed:failed.map(d=>({name:d.name,date:d.date,time:d.time}))
   };
-  state.myAppt={...state.confirmed,totalPeople:1+succeededDeps.length};
-  state.step=3;
+  state.myAppt={...state.confirmed,emp:state.emp};
+  state.step=1;
   state.submitting=false;setLoading(false);
   render();
 };
@@ -454,10 +469,7 @@ onSnapshot(collection(db,"slots"),(snapshot)=>{
     map[date][time]=booked;
   });
   state.booked=map;
-  if(state.user&&!state.myAppt){
-    if(state.step===0) renderStep0();
-    else if(state.step===1) renderStep1();
-  }
+  if(state.user&&!state.myAppt&&state.step===0) renderStep0();
 });
 
 onAuthStateChanged(auth,async(user)=>{
