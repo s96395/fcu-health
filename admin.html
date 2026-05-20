@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>健檢預約後台</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans TC','PingFang TC',sans-serif;background:#f0f7ff;min-height:100vh}
+    .header{background:linear-gradient(135deg,#0f2942,#0d5c8a);padding:20px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+    .header-title{font-size:20px;font-weight:900;letter-spacing:2px}
+    .header-sub{font-size:12px;opacity:.6;margin-top:4px}
+    .btn{border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+    .btn-logout{background:rgba(255,255,255,.15);color:#fff}
+    .btn-export{background:#059669;color:#fff;padding:10px 20px;font-size:14px;border-radius:10px}
+    .btn-delete{background:#fef2f2;color:#ef4444;border:1px solid #fca5a5;padding:5px 12px;font-size:12px;border-radius:6px}
+    .main{max-width:1000px;margin:0 auto;padding:24px 16px}
+    .login-wrap{text-align:center;padding:80px 20px}
+    .login-title{font-size:22px;font-weight:900;color:#0f2942;margin-bottom:8px}
+    .login-sub{font-size:14px;color:#64748b;margin-bottom:32px}
+    .btn-login{background:linear-gradient(135deg,#0f2942,#0d5c8a);color:#fff;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:800;display:inline-flex;align-items:center;gap:12px}
+    .card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:20px}
+    .card-title{font-size:15px;font-weight:800;color:#0f2942;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+    .filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    select,input{padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+    select:focus,input:focus{border-color:#0d5c8a}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#f1f5f9;padding:10px 12px;text-align:left;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0}
+    td{padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#0f2942}
+    tr:hover td{background:#f8fafc}
+    .tag{display:inline-block;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700}
+    .tag-emp{background:#dbeafe;color:#1d4ed8}
+    .tag-dep{background:#dcfce7;color:#15803d}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+    .stat-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center}
+    .stat-val{font-size:28px;font-weight:900;color:#0d5c8a}
+    .stat-label{font-size:11px;color:#64748b;margin-top:4px}
+    .empty{text-align:center;padding:40px;color:#94a3b8;font-size:14px}
+    .loading{text-align:center;padding:40px;color:#64748b}
+    .no-access{text-align:center;padding:60px 20px}
+    .no-access-icon{font-size:48px;margin-bottom:16px}
+    .no-access-title{font-size:20px;font-weight:900;color:#0f2942;margin-bottom:8px}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+import { app } from "./firebase-config.js";
+import { getFirestore, collection, getDocs, doc, runTransaction, deleteDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+const ADMIN_LIST = [
+  "aaronhsu@gis.fcu.edu.tw","yoyoshen@gis.fcu.edu.tw",
+  "sheena@geosense.tw","minnie@gis.fcu.edu.tw",
+  "novia@gis.fcu.edu.tw","rexyang@gis.fcu.edu.tw","jillhuang@gis.fcu.edu.tw"
+];
+
+let currentUser = null;
+let allAppts    = [];
+let filterDate  = "";
+let filterTime  = "";
+let filterDept  = "";
+
+const root = document.getElementById("app");
+
+// ── 登入 ──
+async function login() {
+  const provider = new GoogleAuthProvider();
+  await signInWithPopup(auth, provider);
+}
+async function logout() {
+  await signOut(auth);
+}
+
+// ── 讀取資料 ──
+async function loadData() {
+  const snap = await getDocs(collection(db, "appointments"));
+  allAppts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  allAppts.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  renderAdmin();
+}
+
+// ── 刪除預約 ──
+async function deleteAppt(appt) {
+  if (!confirm(`確定要刪除「${appt.empName}」的預約？\n（${appt.date} ${appt.time}，共 ${appt.totalPeople} 位）`)) return;
+  const slotId  = `${appt.date}_${appt.time.replace(":","")}`
+  const slotRef = doc(db, "slots", slotId);
+  const apptRef = doc(db, "appointments", appt.id);
+  await runTransaction(db, async (tx) => {
+    const s = await tx.get(slotRef);
+    if (s.exists()) tx.update(slotRef, { booked: Math.max(0, s.data().booked - appt.totalPeople) });
+    tx.delete(apptRef);
+  });
+  await loadData();
+}
+window.deleteAppt = deleteAppt;
+
+// ── 匯出 Excel ──
+function exportExcel() {
+  const filtered = getFiltered();
+  let csv = "\uFEFF日期,時段,單位,員工姓名,眷屬名單,合計人數,預約帳號\n";
+  filtered.forEach(a => {
+    const deps = (a.dependents||[]).join("、") || "無";
+    csv += `${a.date},${a.time},${a.dept},${a.empName},"${deps}",${a.totalPeople},${a.email}\n`;
+  });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = `健檢預約名單_${new Date().toLocaleDateString("zh-TW")}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+window.exportExcel = exportExcel;
+
+function getFiltered() {
+  return allAppts.filter(a =>
+    (!filterDate || a.date === filterDate) &&
+    (!filterTime || a.time === filterTime) &&
+    (!filterDept || a.dept === filterDept)
+  );
+}
+
+window.setFilter = (field, val) => {
+  if (field==="date") filterDate = val;
+  if (field==="time") filterTime = val;
+  if (field==="dept") filterDept = val;
+  renderAdmin();
+};
+
+// ── 統計 ──
+function renderStats(filtered) {
+  const total   = filtered.reduce((a,b) => a + b.totalPeople, 0);
+  const empOnly = filtered.length;
+  const deps    = filtered.reduce((a,b) => a + (b.dependents||[]).length, 0);
+  const dates   = [...new Set(filtered.map(a=>a.date))].length;
+  return `<div class="stats-grid">
+    <div class="stat-card"><div class="stat-val">${empOnly}</div><div class="stat-label">預約筆數</div></div>
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-label">總人數（含眷屬）</div></div>
+    <div class="stat-card"><div class="stat-val">${deps}</div><div class="stat-label">眷屬人數</div></div>
+    <div class="stat-card"><div class="stat-val">${dates}</div><div class="stat-label">涵蓋日期數</div></div>
+  </div>`;
+}
+
+// ── 渲染後台 ──
+function renderAdmin() {
+  const filtered = getFiltered();
+  const allDates = [...new Set(allAppts.map(a=>a.date))].sort();
+  const allTimes = [...new Set(allAppts.map(a=>a.time))].sort();
+  const allDepts = [...new Set(allAppts.map(a=>a.dept))].sort();
+
+  let rows = "";
+  if (filtered.length === 0) {
+    rows = `<tr><td colspan="7"><div class="empty">尚無預約資料</div></td></tr>`;
+  } else {
+    filtered.forEach(a => {
+      const deps = (a.dependents||[]).map((d,i) => `<span class="tag tag-dep">眷${i+1}</span> ${d}`).join("<br>");
+      rows += `<tr>
+        <td>${a.date}</td>
+        <td><strong>${a.time}</strong></td>
+        <td>${a.dept}</td>
+        <td><span class="tag tag-emp">員工</span> ${a.empName}</td>
+        <td>${deps || "—"}</td>
+        <td><strong>${a.totalPeople}</strong></td>
+        <td><button class="btn btn-delete" onclick='deleteAppt(${JSON.stringify(a)})'>刪除</button></td>
+      </tr>`;
+    });
+  }
+
+  root.innerHTML = `
+    <div class="header">
+      <div>
+        <div class="header-title">🏥 健檢預約管理後台</div>
+        <div class="header-sub">登入帳號：${currentUser.email}</div>
+      </div>
+      <button class="btn btn-logout" onclick="logout()">登出</button>
+    </div>
+    <div class="main">
+      ${renderStats(filtered)}
+      <div class="card">
+        <div class="card-title">
+          <span>預約名單（共 ${filtered.length} 筆）</span>
+          <button class="btn btn-export" onclick="exportExcel()">⬇ 匯出 CSV</button>
+        </div>
+        <div class="filter-row">
+          <select onchange="setFilter('date',this.value)">
+            <option value="">— 所有日期 —</option>
+            ${allDates.map(d=>`<option value="${d}" ${filterDate===d?"selected":""}>${d}</option>`).join("")}
+          </select>
+          <select onchange="setFilter('time',this.value)">
+            <option value="">— 所有時段 —</option>
+            ${allTimes.map(t=>`<option value="${t}" ${filterTime===t?"selected":""}>${t}</option>`).join("")}
+          </select>
+          <select onchange="setFilter('dept',this.value)">
+            <option value="">— 所有單位 —</option>
+            ${allDepts.map(d=>`<option value="${d}" ${filterDept===d?"selected":""}>${d}</option>`).join("")}
+          </select>
+        </div>
+        <table>
+          <thead><tr><th>日期</th><th>時段</th><th>單位</th><th>員工</th><th>眷屬</th><th>人數</th><th>操作</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ── 無權限 ──
+function renderNoAccess() {
+  root.innerHTML = `
+    <div class="header"><div class="header-title">🏥 健檢預約管理後台</div></div>
+    <div class="main"><div class="no-access">
+      <div class="no-access-icon">🚫</div>
+      <div class="no-access-title">您沒有管理員權限</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:20px">帳號：${currentUser.email}</div>
+      <button class="btn" style="background:#e2e8f0;color:#475569" onclick="logout()">登出</button>
+    </div></div>`;
+}
+
+// ── 登入畫面 ──
+function renderLogin() {
+  root.innerHTML = `
+    <div class="header"><div class="header-title">🏥 健檢預約管理後台</div></div>
+    <div class="main"><div class="login-wrap">
+      <div style="font-size:48px;margin-bottom:16px">🔐</div>
+      <div class="login-title">福委專屬後台</div>
+      <div class="login-sub">請使用福委 Gmail 帳號登入</div>
+      <button class="btn btn-login" onclick="login()">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
+        使用 Google 帳號登入
+      </button>
+    </div></div>`;
+}
+
+window.login  = login;
+window.logout = logout;
+
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (!user) { renderLogin(); return; }
+  if (!ADMIN_LIST.includes(user.email.toLowerCase())) { renderNoAccess(); return; }
+  root.innerHTML = `<div class="loading">載入資料中…</div>`;
+  await loadData();
+});
+</script>
+</body>
+</html>
