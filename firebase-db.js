@@ -8,78 +8,16 @@ import {
   getFirestore,
   doc,
   collection,
-  getDoc,
   onSnapshot,
   runTransaction,
+  setDoc,
   addDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 export const db = getFirestore(app);
 
-// ── 即時監聽所有時段名額 ──────────────────────
-// callback(bookedMap) 每次有變動就觸發
-// bookedMap 格式：{ "2025-07-18": { "07:30": 1, "07:45": 0 }, ... }
-export function listenSlots(callback) {
-  const ref = collection(db, "slots");
-  return onSnapshot(ref, (snapshot) => {
-    const map = {};
-    snapshot.forEach((d) => {
-      const { date, time, booked } = d.data();
-      if (!map[date]) map[date] = {};
-      map[date][time] = booked;
-    });
-    callback(map);
-  });
-}
-
-// ── 送出預約（Transaction 原子操作，防止超訂）──
-// payload: { date, time, dept, empName, dependents[] }
-// 回傳 { ok: true } 或 { ok: false, message: "錯誤訊息" }
-export async function submitAppointment(payload) {
-  const { date, time, dept, empName, dependents } = payload;
-  const totalPeople = 1 + dependents.length;
-  const slotId  = `${date}_${time.replace(":", "")}`;
-  const slotRef = doc(db, "slots", slotId);
-  const apptCol = collection(db, "appointments");
-
-  try {
-    await runTransaction(db, async (tx) => {
-      const slotSnap = await tx.get(slotRef);
-
-      if (!slotSnap.exists()) throw new Error("查無此時段");
-
-      const { booked, limit } = slotSnap.data();
-      if (booked + totalPeople > limit) {
-        throw new Error(`名額不足（剩餘 ${limit - booked} 位，您需要 ${totalPeople} 位）`);
-      }
-
-      // 更新已預約人數
-      tx.update(slotRef, { booked: booked + totalPeople });
-
-      // 新增預約紀錄
-      const apptRef = doc(apptCol);
-      tx.set(apptRef, {
-        date,
-        time,
-        dept,
-        empName,
-        dependents,       // 眷屬姓名陣列
-        totalPeople,
-        createdAt: serverTimestamp()
-      });
-    });
-
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, message: err.message };
-  }
-}
-
-// ── 初始化時段資料（只需執行一次）─────────────
-// 在 browser console 執行：initSlots() 即可
-import { setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+// ── 時段資料 ──────────────────────────────────
 const SLOTS_DATA = {
   "2025-07-18": [
     { time: "07:30", limit: 2 }, { time: "07:45", limit: 4 },
@@ -171,7 +109,51 @@ const SLOTS_DATA = {
   ],
 };
 
-export async function initSlots() {
+// ── 即時監聽所有時段名額 ──────────────────────
+export function listenSlots(callback) {
+  const ref = collection(db, "slots");
+  return onSnapshot(ref, (snapshot) => {
+    const map = {};
+    snapshot.forEach((d) => {
+      const { date, time, booked } = d.data();
+      if (!map[date]) map[date] = {};
+      map[date][time] = booked;
+    });
+    callback(map);
+  });
+}
+
+// ── 送出預約（Transaction 防止超訂）──────────
+export async function submitAppointment(payload) {
+  const { date, time, dept, empName, dependents } = payload;
+  const totalPeople = 1 + dependents.length;
+  const slotId  = `${date}_${time.replace(":", "")}`;
+  const slotRef = doc(db, "slots", slotId);
+  const apptCol = collection(db, "appointments");
+
+  try {
+    await runTransaction(db, async (tx) => {
+      const slotSnap = await tx.get(slotRef);
+      if (!slotSnap.exists()) throw new Error("查無此時段");
+      const { booked, limit } = slotSnap.data();
+      if (booked + totalPeople > limit) {
+        throw new Error(`名額不足（剩餘 ${limit - booked} 位，您需要 ${totalPeople} 位）`);
+      }
+      tx.update(slotRef, { booked: booked + totalPeople });
+      const apptRef = doc(apptCol);
+      tx.set(apptRef, {
+        date, time, dept, empName, dependents,
+        totalPeople, createdAt: serverTimestamp()
+      });
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: err.message };
+  }
+}
+
+// ── 初始化時段資料（只需執行一次）─────────────
+async function initSlots() {
   let count = 0;
   for (const [date, slots] of Object.entries(SLOTS_DATA)) {
     for (const slot of slots) {
@@ -183,10 +165,10 @@ export async function initSlots() {
         booked: 0
       });
       count++;
+      console.log(`寫入 ${date} ${slot.time}...`);
     }
   }
   console.log(`✅ 初始化完成，共寫入 ${count} 個時段`);
 }
 
-// 掛到 window 方便 console 執行
 window.initSlots = initSlots;
