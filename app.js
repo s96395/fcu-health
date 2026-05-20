@@ -328,7 +328,20 @@ window.handleLogout = async () => {
 window.selectDate = (date) => { state.selectedDate = date; state.step = 2; render(); };
 window.selectTime = (time) => { state.selectedTime = time; state.step = 3; render(); };
 window.goBack = (fromStep) => { state.step = fromStep - 1; state.errors = {}; render(); };
-window.updateField = (field, value) => { state[field] = value; state.errors[field] = undefined; renderStep3(); };
+window.updateField = (field, value) => {
+  state[field] = value;
+  state.errors[field] = undefined;
+  // 只更新名額小計，不重繪整個表單
+  const total = totalPeople();
+  const rem = getRemaining(state.selectedDate, state.selectedTime);
+  const isOver = total > rem;
+  const qs = document.querySelector('.quota-summary');
+  if (qs) {
+    qs.className = 'quota-summary ' + (isOver ? 'over' : '');
+    qs.querySelector('.quota-count').className = 'quota-count ' + (isOver ? 'over' : '');
+    qs.querySelector('.quota-count').textContent = total + ' 位';
+  }
+};
 window.addDependent = () => { state.dependents.push(""); renderStep3(); };
 window.updateDependent = (idx, val) => { state.dependents[idx] = val; state.errors[`dep_${idx}`] = undefined; };
 window.removeDependent = (idx) => {
