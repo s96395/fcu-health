@@ -195,9 +195,19 @@ function renderPersonCard(person, prefix, label, tagBg, nameErr, dateErr, timeEr
       <div style="margin-top:16px;margin-bottom:16px">
         <label class="form-label">姓名 <span class="form-required">*</span></label>
         <input class="form-control ${nameErr?"error":""}" type="text"
-          placeholder="請輸入姓名" value="${person.name}"
+          placeholder="請輸入中文全名" value="${person.name}"
           oninput="updatePersonName('${prefix}',this.value)"/>
         ${nameErr?`<div class="form-error">${nameErr}</div>`:""}
+        <div style="font-size:12px;color:#94a3b8;margin-top:6px">⚠️ 請務必填寫中文全名</div>
+      </div>
+
+      <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:8px">🔔 腸胃鏡檢查注意事項</div>
+        <div style="font-size:13px;color:#78350f;line-height:1.8">
+          · 選擇腸胃鏡的同仁，受檢時間固定於 <strong>07:30 或 07:45</strong><br>
+          · 因每天有檢查人數限制，若額滿需再協調時間<br>
+          · 請選擇 07:30 或 07:45 時段
+        </div>
       </div>
 
       <div style="margin-bottom:16px">
