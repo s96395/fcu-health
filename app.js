@@ -12,37 +12,37 @@ const auth = getAuth(app);
 
 const DEPT_LIST = ["總管理處","天眼公司","統合處","科管處","空資處"];
 const SLOTS_DATA = {
-  "2026-07-18":[{time:"07:30",limit:2},{time:"07:45",limit:4},{time:"08:00",limit:9},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-07-19":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-07-25":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-07-26":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-01":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-02":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-08":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-09":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-15":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-16":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-22":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-23":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-29":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-08-30":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-09-05":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:2},{time:"09:30",limit:5}],
-  "2026-09-06":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-09-12":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:6},{time:"09:30",limit:4}],
-  "2026-09-13":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-09-19":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-09-20":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-09-26":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
-  "2026-09-27":[{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-07-18":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:4},{time:"08:00",limit:9},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-07-19":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-07-25":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-07-26":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-01":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-02":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-08":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-09":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-15":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-16":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-22":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-23":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-29":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-08-30":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-09-05":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:2},{time:"09:30",limit:5}],
+  "2026-09-06":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-09-12":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:6},{time:"09:30",limit:4}],
+  "2026-09-13":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-09-19":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-09-20":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-09-26":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
+  "2026-09-27":[{time:"07:30",limit:6,scope:"endoscopy"},{time:"07:45",limit:5},{time:"08:00",limit:10},{time:"09:00",limit:5},{time:"09:30",limit:5}],
 };
 const WD=["日","一","二","三","四","五","六"];
 const STEPS=["填寫資料","預約完成"];
 
-// person: { name, dept, date, time, mode:"online"|"self", note, expanded }
+// person: { name, dept, date, time, mode:"online"|"self", note, endoscopy:bool, expanded }
 let state={
   user:null, myAppt:null, step:0, booked:{},
-  emp:{ name:"", dept:"", date:"", time:"", mode:"online", note:"", expanded:true },
-  dependents:[], // [{name, date, time, mode, note, expanded}]
+  emp:{ name:"", dept:"", date:"", time:"", mode:"online", note:"", endoscopy:false, expanded:true },
+  dependents:[], // [{name, date, time, mode, note, endoscopy, expanded}]
   errors:{}, confirmed:null, submitting:false,
 };
 
@@ -92,7 +92,7 @@ function renderUserBar(user){
 }
 
 // ── 日期時段選擇器 ────────────────────────────
-function renderDateTimePicker(prefix, selDate, selTime){
+function renderDateTimePicker(prefix, selDate, selTime, isEndoscopy=false){
   const months={};
   Object.keys(SLOTS_DATA).sort().forEach(date=>{
     const {m}=fmtDate(date);
@@ -133,6 +133,9 @@ function renderDateTimePicker(prefix, selDate, selTime){
       <div style="font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:1px;margin-bottom:10px">選擇時段</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">`;
     for(const slot of SLOTS_DATA[selDate]){
+      // 腸胃鏡時段只給腸胃鏡，非腸胃鏡時段不給腸胃鏡
+      if(slot.scope==="endoscopy" && !isEndoscopy) continue;
+      if(!slot.scope && isEndoscopy) continue;
       const rem=getRemaining(selDate,slot.time);
       const isFull=rem<=0;
       const isSel=selTime===slot.time;
@@ -159,6 +162,7 @@ function renderDateTimePicker(prefix, selDate, selTime){
 
 // ── 人員卡片 ──────────────────────────────────
 function renderPersonCard(person, prefix, label, tagBg, nameErr, dateErr, timeErr, noteErr, showDept=false){
+  const isEndoscopy=person.endoscopy||false;
   const isExp=person.expanded;
   const isSelf=person.mode==="self";
   const hasSummary=person.name&&(isSelf?person.note:(person.date&&person.time));
@@ -236,7 +240,17 @@ function renderPersonCard(person, prefix, label, tagBg, nameErr, dateErr, timeEr
         <label class="form-label" style="margin-bottom:12px">選擇日期與時段 <span class="form-required">*</span></label>
         ${dateErr?`<div class="form-error" style="margin-bottom:8px">${dateErr}</div>`:""}
         ${timeErr?`<div class="form-error" style="margin-bottom:8px">${timeErr}</div>`:""}
-        ${renderDateTimePicker(prefix, person.date, person.time)}
+        <div style="margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:12px;padding:14px 18px;border:2px solid ${isEndoscopy?"#0d5c8a":"#e2e8f0"};border-radius:12px;cursor:pointer;background:${isEndoscopy?"#eff6ff":"#fff"};transition:all .2s">
+            <input type="checkbox" ${isEndoscopy?"checked":""} onchange="toggleEndoscopy('${prefix}',this.checked)"
+              style="width:20px;height:20px;accent-color:#0d5c8a;cursor:pointer;flex-shrink:0"/>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#0f2942">我有預約腸胃鏡檢查</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px">勾選後將只開放 07:30 時段</div>
+            </div>
+          </label>
+        </div>
+        ${renderDateTimePicker(prefix, person.date, person.time, isEndoscopy)}
       `}
     </div>`:""}
   </div>`;
@@ -379,6 +393,11 @@ window.setPersonMode=(prefix,mode)=>{
   else { const idx=parseInt(prefix.split("_")[1]); state.dependents[idx].mode=mode; state.dependents[idx].date=""; state.dependents[idx].time=""; state.dependents[idx].note=""; }
   renderStep0();
 };
+window.toggleEndoscopy=(prefix,val)=>{
+  if(prefix==="emp"){ state.emp.endoscopy=val; state.emp.date=""; state.emp.time=""; }
+  else { const idx=parseInt(prefix.split("_")[1]); state.dependents[idx].endoscopy=val; state.dependents[idx].date=""; state.dependents[idx].time=""; }
+  renderStep0();
+};
 window.selectPersonDate=(prefix,date)=>{
   if(prefix==="emp"){ state.emp.date=date; state.emp.time=""; state.errors.emp_date=undefined; }
   else { const idx=parseInt(prefix.split("_")[1]); state.dependents[idx].date=date; state.dependents[idx].time=""; state.errors["dep_"+idx+"_date"]=undefined; }
@@ -389,7 +408,7 @@ window.selectPersonTime=(prefix,time)=>{
   else { const idx=parseInt(prefix.split("_")[1]); state.dependents[idx].time=time; state.errors["dep_"+idx+"_time"]=undefined; }
   renderStep0();
 };
-window.addDependent=()=>{ state.dependents.push({name:"",date:"",time:"",mode:"online",note:"",expanded:true}); renderStep0(); };
+window.addDependent=()=>{ state.dependents.push({name:"",date:"",time:"",mode:"online",note:"",endoscopy:false,expanded:true}); renderStep0(); };
 window.removeDependent=(idx)=>{ state.dependents.splice(idx,1); renderStep0(); };
 
 window.handleSubmit=async()=>{
@@ -436,8 +455,8 @@ window.handleSubmit=async()=>{
         if(booked+1>limit) throw new Error("您選擇的時段已額滿，請重新選擇");
         tx.update(slotRef,{booked:booked+1});
         tx.set(apptRef,{
-          emp:{name:state.emp.name,dept:state.emp.dept,date:state.emp.date,time:state.emp.time,mode:"online"},
-          dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note})),
+          emp:{name:state.emp.name,dept:state.emp.dept,date:state.emp.date,time:state.emp.time,mode:"online",endoscopy:state.emp.endoscopy},
+          dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy})),
           email:state.user.email, totalPeople:1+state.dependents.length,
           createdAt:serverTimestamp()
         });
@@ -446,8 +465,8 @@ window.handleSubmit=async()=>{
       // 自行預約不扣名額，直接寫入
       await runTransaction(db,async(tx)=>{
         tx.set(apptRef,{
-          emp:{name:state.emp.name,dept:state.emp.dept,mode:"self",note:state.emp.note},
-          dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note})),
+          emp:{name:state.emp.name,dept:state.emp.dept,mode:"self",note:state.emp.note,endoscopy:state.emp.endoscopy},
+          dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy})),
           email:state.user.email, totalPeople:1+state.dependents.length,
           createdAt:serverTimestamp()
         });

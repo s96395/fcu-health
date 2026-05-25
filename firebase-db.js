@@ -117,30 +117,30 @@ export async function deleteAppointment(appt) {
 // ── 初始化時段資料 ────────────────────────────
 const SLOTS_DATA = {
   "2026-07-18": [
-    { time: "07:30", limit: 2 }, { time: "07:45", limit: 4 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 4 },
     { time: "08:00", limit: 9 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
-  "2026-07-19": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-07-25": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-07-26": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-01": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-02": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-08": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-09": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-15": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-16": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-22": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-23": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-29": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-08-30": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-09-05": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 2 }, { time: "09:30", limit: 5 }],
-  "2026-09-06": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-09-12": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 6 }, { time: "09:30", limit: 4 }],
-  "2026-09-13": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-09-19": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-09-20": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-09-26": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
-  "2026-09-27": [{ time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-07-19": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-07-25": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-07-26": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-01": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-02": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-08": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-09": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-15": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-16": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-22": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-23": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-29": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-08-30": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-09-05": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 2 }, { time: "09:30", limit: 5 }],
+  "2026-09-06": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-09-12": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 6 }, { time: "09:30", limit: 4 }],
+  "2026-09-13": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-09-19": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-09-20": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-09-26": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
+  "2026-09-27": [{ time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }],
 };
 
 export async function initSlots() {
@@ -153,7 +153,7 @@ export async function initSlots() {
   for (const [date, slots] of Object.entries(SLOTS_DATA)) {
     for (const slot of slots) {
       const id = `${date}_${slot.time.replace(":", "")}`;
-      await setDoc(doc(db, "slots", id), { date, time: slot.time, limit: slot.limit, booked: 0 });
+      await setDoc(doc(db, "slots", id), { date, time: slot.time, limit: slot.limit, scope: slot.scope || null, booked: 0 });
       count++;
       console.log(`✓ ${date} ${slot.time}`);
     }

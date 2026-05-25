@@ -34,7 +34,7 @@ const db  = getFirestore(app);
 
 const SLOTS_DATA = {
   "2026-07-18": [
-    { time: "07:30", limit: 2 }, { time: "07:45", limit: 4 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 4 },
     { time: "08:00", limit: 9 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-07-19": [
@@ -144,6 +144,7 @@ window.run = async () => {
           date,
           time: slot.time,
           limit: slot.limit,
+          scope: slot.scope || null,
           booked: 0
         });
         count++;
