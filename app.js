@@ -208,9 +208,9 @@ function renderPersonCard(person, prefix, label, tagBg, nameErr, dateErr, timeEr
       <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px">
         <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:8px">🔔 腸胃鏡檢查注意事項</div>
         <div style="font-size:13px;color:#78350f;line-height:1.8">
-          · 選擇腸胃鏡的同仁，受檢時間固定於 <strong>07:30 或 07:45</strong><br>
-          · 因每天有檢查人數限制，若額滿需再協調時間<br>
-          · 請選擇 07:30 或 07:45 時段
+          · 選擇腸胃鏡的同仁，受檢時間固定於 <strong>07:30</strong><br>
+          · 每日腸胃鏡名額上限 6 位，額滿後不可再預約<br>
+          · 請勾選「我有預約腸胃鏡檢查」後系統將自動導向 07:30 時段
         </div>
       </div>
 
