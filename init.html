@@ -18,7 +18,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, collection, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCxddo17qMN6PDO8WPFWcU4dPHrt5UIwQs",
@@ -38,87 +38,87 @@ const SLOTS_DATA = {
     { time: "08:00", limit: 9 }, { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-07-19": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-07-25": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-07-26": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-01": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-02": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-08": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-09": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-15": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-16": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-22": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-23": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-29": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-08-30": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-09-05": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 2 }, { time: "09:30", limit: 5 }
   ],
   "2026-09-06": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-09-12": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 6 }, { time: "09:30", limit: 4 }
   ],
   "2026-09-13": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-09-19": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-09-20": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-09-26": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
   "2026-09-27": [
-    { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
+    { time: "07:30", limit: 6, scope: "endoscopy" }, { time: "07:45", limit: 5 }, { time: "08:00", limit: 10 },
     { time: "09:00", limit: 5 }, { time: "09:30", limit: 5 }
   ],
 };
@@ -134,9 +134,19 @@ function addLog(msg) {
 window.run = async () => {
   btn.disabled = true;
   log.textContent = "";
-  addLog("開始寫入...");
   let count = 0;
   try {
+    // 先刪除所有舊資料
+    addLog("🗑 清除舊資料中...");
+    const snap = await getDocs(collection(db, "slots"));
+    for (const d of snap.docs) {
+      await deleteDoc(d.ref);
+      addLog(`  刪除 ${d.id}`);
+    }
+    addLog(`✓ 已清除 ${snap.docs.length} 筆舊資料\n`);
+
+    // 寫入新資料
+    addLog("📝 寫入新資料...");
     for (const [date, slots] of Object.entries(SLOTS_DATA)) {
       for (const slot of slots) {
         const id = `${date}_${slot.time.replace(":", "")}`;
