@@ -155,7 +155,7 @@ window.deleteAppt=deleteAppt;
 
 function exportCSV(){
   const filtered=getFiltered();
-  let csv="\uFEFF單位,員工姓名,員工日期,員工時段,眷屬名單,合計人數,預約帳號\n";
+  let csv="\uFEFF單位,員工姓名,員工日期,員工時段,腸胃鏡,眷屬名單,合計人數,預約帳號\n";
   filtered.forEach(a=>{
     const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time,mode:"online"};
     const empTime=emp.mode==="self"?`自行預約(${emp.note||""})`:emp.time||"";
@@ -166,7 +166,8 @@ function exportCSV(){
       const depDate=dd.mode==="self"?"":dd.date||"";
       return `${dd.name}(${depDate?fmtDate(depDate):""} ${depTime})`;
     }).join("、")||"無";
-    csv+=`${emp.dept||""},${emp.name||""},${empDate?fmtDate(empDate):""},${empTime},"${deps}",${a.totalPeople||1},${a.email}\n`;
+    const empEndoscopy=(emp.endoscopy||(a.dependents||[]).some(d=>d.endoscopy))?"是":"否";
+    csv+=`${emp.dept||""},${emp.name||""},${empDate?fmtDate(empDate):""},${empTime},${empEndoscopy},"${deps}",${a.totalPeople||1},${a.email}\n`;
   });
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   const a=document.createElement("a");
@@ -275,12 +276,18 @@ function renderAdmin(){
           :`${dd.date?fmtDate(dd.date):""} ${dd.time||""}`;
         return `<div class="dep-line"><span class="tag tag-dep">眷${i+1}</span>${dd.name} · ${depTimeStr}</div>`;
       }).join("");
+      // 腸胃鏡判斷：員工或任一眷屬有 endoscopy
+      const hasEndoscopy=(emp.endoscopy||false)||(a.dependents||[]).some(d=>d.endoscopy);
+      const endoCell=hasEndoscopy
+        ?`<span style="background:#dbeafe;color:#1d4ed8;border-radius:5px;padding:2px 8px;font-size:12px;font-weight:700">✓ 腸胃鏡</span>`
+        :`<span style="color:#cbd5e1;font-size:12px">—</span>`;
       rows+=`<tr>
         <td>${emp.dept||""}</td>
         <td><span class="tag tag-emp">員工</span> ${emp.name||""}<br>
           <span style="font-size:11px;color:#64748b">${empTimeStr}</span>
           ${deps}
         </td>
+        <td style="text-align:center">${endoCell}</td>
         <td style="text-align:center"><strong>${a.totalPeople||1}</strong></td>
         <td style="font-size:11px;color:#64748b">${a.email||""}</td>
         <td><button class="btn-delete" onclick="deleteAppt('${a.id}')">刪除</button></td>
@@ -334,7 +341,7 @@ function renderAdmin(){
         </div>
         <div style="overflow-x:auto">
         <table>
-          <thead><tr><th>單位</th><th>姓名／時段</th><th>人數</th><th>帳號</th><th>操作</th></tr></thead>
+          <thead><tr><th>單位</th><th>姓名／時段</th><th>腸胃鏡</th><th>人數</th><th>帳號</th><th>操作</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
         </div>
