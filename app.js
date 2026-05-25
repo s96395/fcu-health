@@ -205,15 +205,6 @@ function renderPersonCard(person, prefix, label, tagBg, nameErr, dateErr, timeEr
         <div style="font-size:12px;color:#94a3b8;margin-top:6px">⚠️ 請務必填寫中文全名</div>
       </div>
 
-      <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:8px">🔔 腸胃鏡檢查注意事項</div>
-        <div style="font-size:13px;color:#78350f;line-height:1.8">
-          · 選擇腸胃鏡的同仁，受檢時間固定於 <strong>07:30</strong><br>
-          · 每日腸胃鏡名額上限 6 位，額滿後不可再預約<br>
-          · 請勾選「我有預約腸胃鏡檢查」後系統將自動導向 07:30 時段
-        </div>
-      </div>
-
       <div style="margin-bottom:16px">
         <label class="form-label">預約方式 <span class="form-required">*</span></label>
         <div class="radio-group">
@@ -223,6 +214,15 @@ function renderPersonCard(person, prefix, label, tagBg, nameErr, dateErr, timeEr
           <label class="radio-option ${isSelf?"selected":""}" onclick="setPersonMode('${prefix}','self')">
             <input type="radio" name="mode_${prefix}" ${isSelf?"checked":""} readonly> 自行與晨悅聯繫預約
           </label>
+        </div>
+      </div>
+
+      <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:8px">🔔 腸胃鏡檢查注意事項</div>
+        <div style="font-size:13px;color:#78350f;line-height:1.8">
+          · 選擇腸胃鏡的同仁，受檢時間固定於 <strong>07:30</strong><br>
+          · 每日腸胃鏡名額上限 6 位，額滿後不可再預約<br>
+          · 請勾選「我有預約腸胃鏡檢查」後系統將自動導向 07:30 時段
         </div>
       </div>
 
