@@ -347,11 +347,12 @@ function renderAlreadyBooked(){
   const a=state.myAppt;
   const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time,mode:"online"};
   const deps=(a.dependents||[]).map((dep,i)=>{
-    const d=typeof dep==="object"?dep:{name:dep,date:emp.date,time:emp.time,mode:"online"};
+    const d=typeof dep==="object"?dep:{name:dep,date:emp.date,time:emp.time,mode:"online",endoscopy:false};
     const info=d.mode==="self"?`自行預約 · ${d.note}`:`${d.date?fmtDate(d.date).full:""} ${d.time||""}`;
+    const endoTag=d.endoscopy?`<span style="background:#dbeafe;color:#1d4ed8;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin-left:6px">腸胃鏡</span>`:"";
     return `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f0fdf4;border-radius:12px;margin-bottom:10px;flex-wrap:wrap">
       <span style="background:#dcfce7;color:#15803d;border-radius:7px;padding:3px 10px;font-size:13px;font-weight:700">眷屬 ${i+1}</span>
-      <span style="font-size:16px;font-weight:800">${d.name}</span>
+      <span style="font-size:16px;font-weight:800">${d.name}${endoTag}</span>
       <span style="font-size:13px;color:#64748b;margin-left:auto">${info}</span>
     </div>`;
   }).join("");
@@ -497,7 +498,7 @@ window.handleSubmit=async()=>{
 
   state.confirmed={
     emp:{...state.emp},
-    dependents:succeededDeps.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note})),
+    dependents:succeededDeps.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy||false})),
     failed:failed.map(d=>({name:d.name,date:d.date,time:d.time}))
   };
   state.myAppt={...state.confirmed};

@@ -155,19 +155,22 @@ window.deleteAppt=deleteAppt;
 
 function exportCSV(){
   const filtered=getFiltered();
-  let csv="\uFEFF單位,員工姓名,員工日期,員工時段,腸胃鏡,眷屬名單,合計人數,預約帳號\n";
+  let csv="\uFEFF單位,姓名,身份,所屬員工,日期,時段,腸胃鏡,預約帳號\n";
   filtered.forEach(a=>{
-    const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time,mode:"online"};
-    const empTime=emp.mode==="self"?`自行預約(${emp.note||""})`:emp.time||"";
+    const emp=a.emp||{name:a.empName,dept:a.dept,date:a.date,time:a.time,mode:"online",endoscopy:false};
     const empDate=emp.mode==="self"?"":emp.date||"";
-    const deps=(a.dependents||[]).map(d=>{
-      const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time,mode:"online"};
-      const depTime=dd.mode==="self"?`自行預約(${dd.note||""})`:dd.time||"";
+    const empTime=emp.mode==="self"?`自行預約(${emp.note||""})`:emp.time||"";
+    const empEndoscopy=emp.endoscopy?"是":"否";
+    // 員工列
+    csv+=`${emp.dept||""},${emp.name||""},員工,—,${empDate?fmtDate(empDate):""},${empTime},${empEndoscopy},${a.email}\n`;
+    // 眷屬各自一列
+    (a.dependents||[]).forEach(d=>{
+      const dd=typeof d==="object"?d:{name:d,date:emp.date,time:emp.time,mode:"online",endoscopy:false};
       const depDate=dd.mode==="self"?"":dd.date||"";
-      return `${dd.name}(${depDate?fmtDate(depDate):""} ${depTime})`;
-    }).join("、")||"無";
-    const empEndoscopy=(emp.endoscopy||(a.dependents||[]).some(d=>d.endoscopy))?"是":"否";
-    csv+=`${emp.dept||""},${emp.name||""},${empDate?fmtDate(empDate):""},${empTime},${empEndoscopy},"${deps}",${a.totalPeople||1},${a.email}\n`;
+      const depTime=dd.mode==="self"?`自行預約(${dd.note||""})`:dd.time||"";
+      const depEndoscopy=dd.endoscopy?"是":"否";
+      csv+=`${emp.dept||""},${dd.name||""},眷屬,${emp.name||""},${depDate?fmtDate(depDate):""},${depTime},${depEndoscopy},${a.email}\n`;
+    });
   });
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   const a=document.createElement("a");
@@ -276,10 +279,12 @@ function renderAdmin(){
           :`${dd.date?fmtDate(dd.date):""} ${dd.time||""}`;
         return `<div class="dep-line"><span class="tag tag-dep">眷${i+1}</span>${dd.name} · ${depTimeStr}</div>`;
       }).join("");
-      // 腸胃鏡判斷：員工或任一眷屬有 endoscopy
-      const hasEndoscopy=(emp.endoscopy||false)||(a.dependents||[]).some(d=>d.endoscopy);
-      const endoCell=hasEndoscopy
-        ?`<span style="background:#dbeafe;color:#1d4ed8;border-radius:5px;padding:2px 8px;font-size:12px;font-weight:700">✓ 腸胃鏡</span>`
+      // 腸胃鏡：列出做腸胃鏡的人名
+      const endoPeople=[];
+      if(emp.endoscopy) endoPeople.push(emp.name||"員工");
+      (a.dependents||[]).forEach(d=>{if(d.endoscopy) endoPeople.push(d.name||"眷屬");});
+      const endoCell=endoPeople.length>0
+        ?`<span style="background:#dbeafe;color:#1d4ed8;border-radius:5px;padding:2px 8px;font-size:12px;font-weight:700">✓ ${endoPeople.join("、")}</span>`
         :`<span style="color:#cbd5e1;font-size:12px">—</span>`;
       rows+=`<tr>
         <td>${emp.dept||""}</td>
