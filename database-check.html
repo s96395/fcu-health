@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>資料庫原始資料核對</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans TC','PingFang TC',sans-serif;background:#f4f7fb;color:#102a43;min-height:100vh}
+    .header{background:linear-gradient(135deg,#111827,#0d5c8a);color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .header h1{font-size:22px;font-weight:900;letter-spacing:1px}.header p{font-size:12px;opacity:.75;margin-top:4px}
+    .main{max-width:1440px;margin:0 auto;padding:24px 16px 48px}.card{background:#fff;border-radius:16px;box-shadow:0 2px 14px rgba(15,41,66,.08);padding:20px;margin-bottom:18px}
+    .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.login .card{max-width:460px;text-align:center}
+    .btn{border:none;border-radius:10px;padding:10px 16px;font-family:inherit;font-weight:800;cursor:pointer;background:#0d5c8a;color:#fff}.btn.secondary{background:#e5eef7;color:#0f2942}.btn.danger{background:#334155}.btn.ok{background:#059669}.btn:disabled{opacity:.55;cursor:not-allowed}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.notice{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.7}.muted{color:#64748b;font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px}.stat strong{display:block;font-size:26px;color:#0d5c8a}.section-title{font-size:17px;font-weight:900;color:#0f2942;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    table{width:100%;border-collapse:collapse;font-size:12px}th{background:#f1f5f9;color:#475569;text-align:left;padding:10px;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:1}td{padding:10px;border-bottom:1px solid #edf2f7;vertical-align:top}tr:hover td{background:#fafcff}.table-wrap{overflow:auto;max-height:680px;border:1px solid #e2e8f0;border-radius:12px}.pill{display:inline-block;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800}.pill.bad{background:#fee2e2;color:#b91c1c}.pill.good{background:#dcfce7;color:#15803d}.pill.warn{background:#fef3c7;color:#b45309}
+    pre{white-space:pre-wrap;word-break:break-word;background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px;font-size:11px;line-height:1.45;max-width:520px}.raw-small{max-width:360px}.list{display:grid;gap:8px}.issue{border:1px solid #e2e8f0;border-left:5px solid #d97706;border-radius:10px;padding:10px;background:#fff}.issue.bad{border-left-color:#dc2626}.issue.good{border-left-color:#16a34a}.issue-title{font-weight:900;margin-bottom:4px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tab{background:#fff;color:#64748b;border:2px solid #e2e8f0}.tab.active{background:#0d5c8a;color:#fff;border-color:#0d5c8a}.hidden{display:none!important}.loading{text-align:center;padding:48px;color:#64748b}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f1f5f9;padding:2px 5px;border-radius:5px}
+  </style>
+</head>
+<body>
+<div id="app" class="loading">初始化中…</div>
+<script type="module">
+import { app } from "./firebase-config.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const db=getFirestore(app), auth=getAuth(app);
+const ADMIN_LIST=["aaronhsu@gis.fcu.edu.tw","yoyoshen@gis.fcu.edu.tw","sheena@geosense.tw","minnie@gis.fcu.edu.tw","novia@gis.fcu.edu.tw","rexyang@gis.fcu.edu.tw","jillhuang@gis.fcu.edu.tw","hanzohuang@geosense.tw"];
+const root=document.getElementById("app");
+let currentUser=null, appointments=[], slots=[], checks=null, activeTab="summary";
+const isAdmin=email=>ADMIN_LIST.includes((email||"").toLowerCase());
+
+function escapeHtml(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));}
+function isTimestamp(v){return v&&typeof v==="object"&&typeof v.seconds==="number"&&typeof v.nanoseconds==="number"&&typeof v.toDate==="function";}
+function normalizeValue(v){
+  if(isTimestamp(v)) return {seconds:v.seconds,nanoseconds:v.nanoseconds,isoString:v.toDate().toISOString()};
+  if(Array.isArray(v)) return v.map(normalizeValue);
+  if(v&&typeof v==="object"){const out={};Object.keys(v).sort().forEach(k=>out[k]=normalizeValue(v[k]));return out;}
+  return v;
+}
+function rawJson(v){return JSON.stringify(normalizeValue(v),null,2);}
+function createdAtDisplay(v){return isTimestamp(v)?`${v.toDate().toISOString()}\n原始 seconds=${v.seconds}, nanoseconds=${v.nanoseconds}`:rawJson(v);}
+function personOnlineCount(appt){let n=0;if((appt.emp?.mode||"online")==="online") n++;(Array.isArray(appt.dependents)?appt.dependents:[]).forEach(d=>{if((d?.mode||"online")==="online") n++;});return n;}
+function personSlots(appt){const list=[];const emp=appt.emp||{};const empDate=emp.date||appt.date;const empTime=emp.time||appt.time;if((emp.mode||"online")==="online"&&empDate&&empTime) list.push({role:"emp",name:emp.name||appt.empName,date:empDate,time:empTime});(Array.isArray(appt.dependents)?appt.dependents:[]).forEach((d,i)=>{if((d?.mode||"online")==="online"&&d?.date&&d?.time) list.push({role:`dependent-${i+1}`,name:d.name,date:d.date,time:d.time});});return list;}
+function docNameCandidates(appt){const names=[];if(appt.emp?.name) names.push(appt.emp.name);if(appt.empName) names.push(appt.empName);(Array.isArray(appt.dependents)?appt.dependents:[]).forEach(d=>{if(d?.name) names.push(d.name);});return names;}
+function dateTimeForMissing(appt){return {date:appt.emp?.date||appt.date||"",time:appt.emp?.time||appt.time||""};}
+function computeChecks(){
+  const totalPeopleMismatches=[], missingFields=[], legacyDocs=[], dupEmails=new Map(), dupNames=new Map(), usage=new Map();
+  appointments.forEach(appt=>{
+    const depLen=Array.isArray(appt.dependents)?appt.dependents.length:0;
+    const expected=1+depLen;
+    if(appt.totalPeople!==expected) totalPeopleMismatches.push({documentId:appt.documentId,totalPeople:appt.totalPeople,expected,dependentsLength:depLen});
+    const {date,time}=dateTimeForMissing(appt);const name=appt.emp?.name||appt.empName||"";
+    const miss=[];if(!date) miss.push("date");if(!time) miss.push("time");if(!name) miss.push("name");if(!appt.email) miss.push("email");
+    if(miss.length) missingFields.push({documentId:appt.documentId,missing:miss});
+    if(!appt.emp||!("emp" in appt)||["empName","dept","date","time"].some(k=>k in appt)) legacyDocs.push({documentId:appt.documentId,fields:Object.keys(appt).filter(k=>k!=="documentId")});
+    if(appt.email){const key=String(appt.email).toLowerCase();dupEmails.set(key,[...(dupEmails.get(key)||[]),appt.documentId]);}
+    docNameCandidates(appt).forEach(n=>{const key=String(n).trim();if(key) dupNames.set(key,[...(dupNames.get(key)||[]),appt.documentId]);});
+    personSlots(appt).forEach(p=>{const key=`${p.date} ${p.time}`;usage.set(key,(usage.get(key)||0)+1);});
+  });
+  const slotMismatches=[];
+  slots.forEach(slot=>{const key=`${slot.date||""} ${slot.time||""}`;const actual=usage.get(key)||0;if(slot.booked!==actual) slotMismatches.push({documentId:slot.documentId,date:slot.date,time:slot.time,slotBooked:slot.booked,appointmentOnlinePeople:actual,limit:slot.limit});});
+  usage.forEach((actual,key)=>{if(!slots.some(s=>`${s.date||""} ${s.time||""}`===key)){const [date,time]=key.split(" ");slotMismatches.push({documentId:"(slots 無此文件)",date,time,slotBooked:null,appointmentOnlinePeople:actual,limit:null});}});
+  return {totalPeopleMismatches,missingFields,legacyDocs,slotUsage:[...usage.entries()].sort().map(([key,count])=>{const [date,time]=key.split(" ");return {date,time,count};}),slotMismatches,duplicateEmails:[...dupEmails.entries()].filter(([,ids])=>ids.length>1).map(([value,ids])=>({value,ids})),duplicateNames:[...dupNames.entries()].filter(([,ids])=>ids.length>1).map(([value,ids])=>({value,ids}))};
+}
+function showError(message){root.className="login";root.innerHTML=`<div class="card"><h1>發生錯誤</h1><p class="muted" style="margin:12px 0 18px">${escapeHtml(message)}</p><button class="btn" onclick="location.reload()">重新整理</button></div>`;}
+async function login(){try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){if(e?.code==="auth/popup-closed-by-user"||e?.code==="auth/cancelled-popup-request") showError("已取消登入，請重新登入後再試。");else{console.error("Firebase Authentication login failed",e?.code||e?.message);showError("Firebase Authentication 登入失敗，請重新登入後再試。");}}}
+async function logout(){await signOut(auth);}window.login=login;window.logout=logout;
+async function loadData(){try{root.innerHTML='<div class="loading">直接讀取 Firestore 原始資料中…</div>';const [aSnap,sSnap]=await Promise.all([getDocs(collection(db,"appointments")),getDocs(collection(db,"slots"))]);appointments=aSnap.docs.map(d=>({documentId:d.id,...d.data()}));slots=sSnap.docs.map(d=>({documentId:d.id,...d.data()}));checks=computeChecks();render();}catch(e){console.error("Firestore read failed",e?.code||e?.message);if(e?.code==="permission-denied") showError("Firestore 權限不足，無法讀取 appointments 或 slots，請確認帳號權限與 Firestore Rules。");else showError("讀取資料失敗，請重新整理頁面後再試。");}}
+function download(name,type,text){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
+function downloadJson(){download(`firestore_raw_check_${new Date().toISOString().slice(0,10)}.json`,"application/json;charset=utf-8",JSON.stringify({exportedAt:new Date().toISOString(),appointments:appointments.map(normalizeValue),slots:slots.map(normalizeValue)},null,2));}
+function csvCell(v){const s=String(v??"");return /[",\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;}
+function downloadCsv(){const header=["documentId","email","totalPeople","createdAt","emp","dependents","fullDocumentRawJson"];const rows=appointments.map(a=>[a.documentId,a.email??"",a.totalPeople??"",isTimestamp(a.createdAt)?JSON.stringify(normalizeValue(a.createdAt)):rawJson(a.createdAt),rawJson(a.emp),rawJson(a.dependents),rawJson(a)].map(csvCell).join(","));download(`firestore_raw_check_${new Date().toISOString().slice(0,10)}.csv`,"text/csv;charset=utf-8","\uFEFF"+header.join(",")+"\n"+rows.join("\n"));}
+window.downloadJson=downloadJson;window.downloadCsv=downloadCsv;window.setTab=t=>{activeTab=t;render();};window.reloadData=loadData;
+function issueList(items,render,empty="沒有發現") {return items.length?`<div class="list">${items.map(x=>`<div class="issue bad">${render(x)}</div>`).join("")}</div>`:`<div class="issue good"><div class="issue-title">${empty}</div></div>`;}
+function renderSummary(){const c=checks;return `<div class="grid"><div class="stat"><strong>${appointments.length}</strong><span>appointments 文件</span></div><div class="stat"><strong>${slots.length}</strong><span>slots 文件</span></div><div class="stat"><strong>${c.slotMismatches.length}</strong><span>時段人數不一致</span></div><div class="stat"><strong>${c.totalPeopleMismatches.length}</strong><span>totalPeople 不一致</span></div><div class="stat"><strong>${c.missingFields.length}</strong><span>缺少必要欄位</span></div><div class="stat"><strong>${c.legacyDocs.length}</strong><span>舊版/非新版結構</span></div></div><div class="card"><div class="section-title">唯讀核對說明</div><div class="notice">本頁只匯入 <span class="code">getDocs</span> 與 <span class="code">collection</span> 讀取 <span class="code">appointments</span> / <span class="code">slots</span>，沒有匯入或呼叫任何 Firestore 寫入 API，也不依賴既有後台的篩選、日期格式化、CSV 匯出或顯示轉換邏輯。</div></div><div class="card"><div class="section-title">時段 booked 與 appointments 實際線上人數不一致</div>${issueList(c.slotMismatches,x=>`<div class="issue-title">${escapeHtml(x.date)} ${escapeHtml(x.time)} / slot: ${escapeHtml(x.documentId)}</div><div>slots.booked=${escapeHtml(x.slotBooked)}，appointments 線上預約人數=${escapeHtml(x.appointmentOnlinePeople)}，limit=${escapeHtml(x.limit)}</div>`)}</div><div class="card"><div class="section-title">totalPeople 核對</div>${issueList(c.totalPeopleMismatches,x=>`<div class="issue-title">${escapeHtml(x.documentId)}</div><div>totalPeople=${escapeHtml(x.totalPeople)}，1 + dependents.length=${escapeHtml(x.expected)}</div>`)}</div><div class="card"><div class="section-title">缺少日期、時段、姓名、email 的文件</div>${issueList(c.missingFields,x=>`<div class="issue-title">${escapeHtml(x.documentId)}</div><div>缺少：${escapeHtml(x.missing.join(", "))}</div>`)}</div><div class="card"><div class="section-title">舊版或非新版欄位結構</div>${issueList(c.legacyDocs,x=>`<div class="issue-title">${escapeHtml(x.documentId)}</div><div>實際欄位：${escapeHtml(x.fields.join(", "))}</div>`)}</div><div class="card"><div class="section-title">可能重複 email 或姓名</div>${issueList([...c.duplicateEmails.map(x=>({...x,type:"email"})),...c.duplicateNames.map(x=>({...x,type:"name"}))],x=>`<div class="issue-title">${escapeHtml(x.type)}：${escapeHtml(x.value)}</div><div>文件：${escapeHtml(x.ids.join(", "))}</div>`)}</div><div class="card"><div class="section-title">依日期時段統計 appointments 實際使用人數</div><div class="table-wrap"><table><thead><tr><th>date</th><th>time</th><th>appointments 線上人數</th></tr></thead><tbody>${c.slotUsage.map(x=>`<tr><td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.time)}</td><td>${x.count}</td></tr>`).join("")}</tbody></table></div></div>`;}
+function renderAppointments(){return `<div class="table-wrap"><table><thead><tr><th>document ID</th><th>email</th><th>totalPeople</th><th>createdAt</th><th>emp 原始 JSON</th><th>dependents 原始 JSON</th><th>其他/完整原始文件 JSON</th><th>線上人數</th></tr></thead><tbody>${appointments.map(a=>`<tr><td>${escapeHtml(a.documentId)}</td><td>${escapeHtml(a.email)}</td><td>${escapeHtml(a.totalPeople)}</td><td><pre class="raw-small">${escapeHtml(createdAtDisplay(a.createdAt))}</pre></td><td><pre>${escapeHtml(rawJson(a.emp))}</pre></td><td><pre>${escapeHtml(rawJson(a.dependents))}</pre></td><td><pre>${escapeHtml(rawJson(a))}</pre></td><td>${personOnlineCount(a)}</td></tr>`).join("")}</tbody></table></div>`;}
+function renderSlots(){return `<div class="table-wrap"><table><thead><tr><th>document ID</th><th>date</th><th>time</th><th>booked</th><th>limit</th><th>scope</th><th>完整原始文件 JSON</th></tr></thead><tbody>${slots.map(s=>`<tr><td>${escapeHtml(s.documentId)}</td><td>${escapeHtml(s.date)}</td><td>${escapeHtml(s.time)}</td><td>${escapeHtml(s.booked)}</td><td>${escapeHtml(s.limit)}</td><td>${escapeHtml(s.scope)}</td><td><pre>${escapeHtml(rawJson(s))}</pre></td></tr>`).join("")}</tbody></table></div>`;}
+function render(){if(!currentUser){root.className="login";root.innerHTML=`<div class="card"><h1>資料庫原始資料核對</h1><p class="muted" style="margin:12px 0 18px">請以管理員 Google 帳號登入。</p><button class="btn" onclick="login()">使用 Google 登入</button></div>`;return;}if(!isAdmin(currentUser.email)){root.className="login";root.innerHTML=`<div class="card"><h1>無權限</h1><p class="muted" style="margin:12px 0 18px">${escapeHtml(currentUser.email)} 不是管理員帳號。</p><button class="btn danger" onclick="logout()">登出</button></div>`;return;}root.className="";const body=activeTab==="appointments"?renderAppointments():activeTab==="slots"?renderSlots():renderSummary();root.innerHTML=`<div class="header"><div><h1>資料庫原始資料核對</h1><p>登入：${escapeHtml(currentUser.email)}｜唯讀讀取 Firestore appointments / slots</p></div><div class="actions"><button class="btn ok" onclick="downloadJson()">下載原始 JSON</button><button class="btn ok" onclick="downloadCsv()">下載核對用 CSV</button><button class="btn secondary" onclick="reloadData()">重新讀取</button><button class="btn danger" onclick="logout()">登出</button></div></div><main class="main"><div class="tabs"><button class="btn tab ${activeTab==="summary"?"active":""}" onclick="setTab('summary')">自動核對結果</button><button class="btn tab ${activeTab==="appointments"?"active":""}" onclick="setTab('appointments')">appointments 原始資料</button><button class="btn tab ${activeTab==="slots"?"active":""}" onclick="setTab('slots')">slots 原始資料</button></div>${body}</main>`;}
+onAuthStateChanged(auth,user=>{currentUser=user;if(user&&isAdmin(user.email)) void loadData(); else render();});
+</script>
+</body>
+</html>
