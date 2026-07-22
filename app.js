@@ -413,6 +413,7 @@ window.addDependent=()=>{ state.dependents.push({name:"",date:"",time:"",mode:"o
 window.removeDependent=(idx)=>{ state.dependents.splice(idx,1); renderStep0(); };
 
 window.handleSubmit=async()=>{
+  if(state.submitting) return;
   const errors={};
   if(!state.emp.dept) errors.dept="請選擇單位";
   if(!state.emp.name.trim()) errors.emp_name="請填寫員工姓名";
@@ -441,65 +442,57 @@ window.handleSubmit=async()=>{
   }
 
   state.submitting=true; setLoading(true);
-  const failed=[], succeededDeps=[];
+  const onlinePeople=[];
+  if(state.emp.mode==="online") onlinePeople.push({date:state.emp.date,time:state.emp.time});
+  state.dependents.forEach(dep=>{
+    if(dep.mode==="online") onlinePeople.push({date:dep.date,time:dep.time});
+  });
+  const slotCounts=new Map();
+  onlinePeople.forEach(({date,time})=>{
+    const slotId=`${date}_${time.replace(":","")}`;
+    slotCounts.set(slotId,(slotCounts.get(slotId)||0)+1);
+  });
 
-  // 員工預約
+  // 預約與所有線上時段的扣位必須一起成功或一起失敗
   try{
-    const apptRef=doc(collection(db,"appointments"));
-    if(state.emp.mode==="online"){
-      const slotId=`${state.emp.date}_${state.emp.time.replace(":","")}`
-      const slotRef=doc(db,"slots",slotId);
-      await runTransaction(db,async(tx)=>{
-        const snap=await tx.get(slotRef);
+    const apptRef=doc(db,"appointments",encodeURIComponent(state.user.email.toLowerCase()));
+    const slotEntries=[...slotCounts.entries()].map(([slotId,count])=>({
+      count,ref:doc(db,"slots",slotId)
+    }));
+    await runTransaction(db,async(tx)=>{
+      // Firestore transaction 規定先完成全部讀取，再進行任何寫入。
+      const apptSnap=await tx.get(apptRef);
+      if(apptSnap.exists()) throw new Error("您已經預約過了，如需更改請聯絡福委");
+      const slotSnaps=await Promise.all(slotEntries.map(({ref})=>tx.get(ref)));
+
+      slotSnaps.forEach((snap,i)=>{
         if(!snap.exists()) throw new Error("查無此時段");
         const {booked,limit}=snap.data();
-        if(booked+1>limit) throw new Error("您選擇的時段已額滿，請重新選擇");
-        tx.update(slotRef,{booked:booked+1});
-        tx.set(apptRef,{
-          emp:{name:state.emp.name,dept:state.emp.dept,date:state.emp.date,time:state.emp.time,mode:"online",endoscopy:state.emp.endoscopy},
-          dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy})),
-          email:state.user.email, totalPeople:1+state.dependents.length,
-          createdAt:serverTimestamp()
-        });
+        const nextBooked=booked+slotEntries[i].count;
+        if(!Number.isInteger(booked)||!Number.isInteger(limit)||limit<0||booked<0||booked>limit)
+          throw new Error("時段名額資料異常，請聯絡福委");
+        if(nextBooked>limit) throw new Error("您選擇的其中一個時段名額不足，請重新選擇");
       });
-    } else {
-      // 自行預約不扣名額，直接寫入
-      await runTransaction(db,async(tx)=>{
-        tx.set(apptRef,{
-          emp:{name:state.emp.name,dept:state.emp.dept,mode:"self",note:state.emp.note,endoscopy:state.emp.endoscopy},
-          dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy})),
-          email:state.user.email, totalPeople:1+state.dependents.length,
-          createdAt:serverTimestamp()
-        });
+
+      tx.set(apptRef,{
+        emp:{name:state.emp.name,dept:state.emp.dept,date:state.emp.date,time:state.emp.time,mode:state.emp.mode,note:state.emp.note,endoscopy:state.emp.endoscopy},
+        dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy})),
+        email:state.user.email,totalPeople:1+state.dependents.length,createdAt:serverTimestamp()
       });
-    }
+      slotEntries.forEach(({ref,count},i)=>{
+        tx.update(ref,{booked:slotSnaps[i].data().booked+count});
+      });
+    });
   }catch(e){
     state.submitting=false; setLoading(false);
     state.errors={submit:e.message}; state.emp.expanded=true;
     renderStep0(); return;
   }
 
-  // 眷屬各自扣名額（只有 online 的才扣）
-  for(const dep of state.dependents){
-    if(dep.mode==="self"){ succeededDeps.push(dep); continue; }
-    try{
-      const slotId=`${dep.date}_${dep.time.replace(":","")}`
-      const slotRef=doc(db,"slots",slotId);
-      await runTransaction(db,async(tx)=>{
-        const snap=await tx.get(slotRef);
-        if(!snap.exists()) throw new Error("查無此時段");
-        const {booked,limit}=snap.data();
-        if(booked+1>limit) throw new Error("額滿");
-        tx.update(slotRef,{booked:booked+1});
-      });
-      succeededDeps.push(dep);
-    }catch(e){ failed.push(dep); }
-  }
-
   state.confirmed={
     emp:{...state.emp},
-    dependents:succeededDeps.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy||false})),
-    failed:failed.map(d=>({name:d.name,date:d.date,time:d.time}))
+    dependents:state.dependents.map(d=>({name:d.name,date:d.date,time:d.time,mode:d.mode,note:d.note,endoscopy:d.endoscopy||false})),
+    failed:[]
   };
   state.myAppt={...state.confirmed};
   state.step=1;

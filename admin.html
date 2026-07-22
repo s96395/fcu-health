@@ -133,23 +133,36 @@ async function deleteAppt(apptId){
   const empName=appt.emp?.name||appt.empName||"";
   if(!confirm(`確定要刪除「${empName}」的預約？\n員工和所有眷屬的名額都會還原。`)) return;
 
-  // 收集所有要還原的 {date,time}
-  const toRestore=[];
-  if(appt.emp?.date&&appt.emp?.time) toRestore.push({date:appt.emp.date,time:appt.emp.time});
-  else if(appt.date&&appt.time) toRestore.push({date:appt.date,time:appt.time});
-  (appt.dependents||[]).forEach(dep=>{
-    if(dep.date&&dep.time) toRestore.push({date:dep.date,time:dep.time});
-  });
-
   await runTransaction(db,async(tx)=>{
-    // 先全部 read
-    const slotRefs=toRestore.map(({date,time})=>doc(db,"slots",`${date}_${time.replace(":","")}`));
-    const slotSnaps=await Promise.all(slotRefs.map(ref=>tx.get(ref)));
-    // 再全部 write
-    slotSnaps.forEach((s,i)=>{
-      if(s.exists()) tx.update(slotRefs[i],{booked:Math.max(0,s.data().booked-1)});
+    const apptRef=doc(db,"appointments",apptId);
+    const apptSnap=await tx.get(apptRef);
+    if(!apptSnap.exists()) throw new Error("此預約已不存在，請重新整理");
+
+    // 必須以 transaction 內讀到的資料計算，並彙總同一時段的人數。
+    const current=apptSnap.data(), restoreCounts=new Map();
+    const addRestore=(date,time,count=1)=>{
+      if(!date||!time) return;
+      const slotId=`${date}_${time.replace(":","")}`;
+      restoreCounts.set(slotId,(restoreCounts.get(slotId)||0)+count);
+    };
+    if(current.emp){
+      if(current.emp.mode!=="self") addRestore(current.emp.date,current.emp.time);
+    }else addRestore(current.date,current.time,current.totalPeople||1);
+    if(current.emp) (current.dependents||[]).forEach(dep=>{
+      if(typeof dep==="object"&&dep.mode!=="self") addRestore(dep.date,dep.time);
     });
-    tx.delete(doc(db,"appointments",apptId));
+
+    const slotEntries=[...restoreCounts.entries()].map(([slotId,count])=>({count,ref:doc(db,"slots",slotId)}));
+    const slotSnaps=await Promise.all(slotEntries.map(({ref})=>tx.get(ref)));
+    slotSnaps.forEach((snap,i)=>{
+      if(!snap.exists()) throw new Error("找不到預約占用的時段，已取消刪除");
+      const {booked,limit}=snap.data(), nextBooked=booked-slotEntries[i].count;
+      if(!Number.isInteger(booked)||!Number.isInteger(limit)||limit<0||booked<0||booked>limit||nextBooked<0||nextBooked>limit)
+        throw new Error("時段名額資料異常，已取消刪除");
+    });
+
+    slotEntries.forEach(({ref,count},i)=>tx.update(ref,{booked:slotSnaps[i].data().booked-count}));
+    tx.delete(apptRef);
   });
   await loadData();
 }
