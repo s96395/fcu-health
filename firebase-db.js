@@ -66,17 +66,19 @@ export async function submitAppointment(payload) {
   const totalPeople = 1 + dependents.length;
   const slotId  = `${date}_${time.replace(":", "")}`;
   const slotRef = doc(db, "slots", slotId);
-  const apptRef = doc(collection(db, "appointments"));
+  const apptRef = doc(db, "appointments", encodeURIComponent(email.toLowerCase()));
 
   try {
-    // 先檢查是否已預約
-    const existing = await getMyAppointment(email);
-    if (existing) throw new Error("您已經預約過了，如需更改請聯絡福委");
-
     await runTransaction(db, async (tx) => {
+      const apptSnap = await tx.get(apptRef);
+      if (apptSnap.exists()) throw new Error("您已經預約過了，如需更改請聯絡福委");
       const slotSnap = await tx.get(slotRef);
       if (!slotSnap.exists()) throw new Error("查無此時段");
       const { booked, limit } = slotSnap.data();
+      if (!Number.isInteger(totalPeople) || totalPeople < 1 || !Number.isInteger(booked) ||
+          !Number.isInteger(limit) || limit < 0 || booked < 0 || booked > limit) {
+        throw new Error("時段名額資料異常，請聯絡福委");
+      }
       if (booked + totalPeople > limit) {
         throw new Error(`名額不足（剩餘 ${limit - booked} 位，您需要 ${totalPeople} 位）`);
       }
@@ -100,16 +102,24 @@ export async function getAllAppointments() {
 
 // ── 刪除預約並還原名額 ────────────────────────
 export async function deleteAppointment(appt) {
-  const slotId  = `${appt.date}_${appt.time.replace(":", "")}`;
-  const slotRef = doc(db, "slots", slotId);
   const apptRef = doc(db, "appointments", appt.id);
 
   await runTransaction(db, async (tx) => {
+    const apptSnap = await tx.get(apptRef);
+    if (!apptSnap.exists()) throw new Error("此預約已不存在");
+    const current = apptSnap.data();
+    const slotId  = `${current.date}_${current.time.replace(":", "")}`;
+    const slotRef = doc(db, "slots", slotId);
     const slotSnap = await tx.get(slotRef);
-    if (slotSnap.exists()) {
-      const booked = slotSnap.data().booked - appt.totalPeople;
-      tx.update(slotRef, { booked: Math.max(0, booked) });
+    if (!slotSnap.exists()) throw new Error("找不到預約占用的時段");
+    const { booked, limit } = slotSnap.data();
+    const nextBooked = booked - current.totalPeople;
+    if (!Number.isInteger(current.totalPeople) || current.totalPeople < 1 ||
+        !Number.isInteger(booked) || !Number.isInteger(limit) || limit < 0 ||
+        booked < 0 || nextBooked < 0 || booked > limit || nextBooked > limit) {
+      throw new Error("時段名額資料異常，已取消刪除");
     }
+    tx.update(slotRef, { booked: nextBooked });
     tx.delete(apptRef);
   });
 }
